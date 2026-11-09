@@ -247,7 +247,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.3 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4 · gym · fast · food</div>
   </header>
 
   <main>
@@ -408,7 +408,7 @@ nav button{font-size:.62rem}
             <h3 style="margin:0">Today</h3>
             <input type="date" id="logDate" style="width:auto;padding:7px 9px;font-size:.9rem" onchange="renderLog()">
           </div>
-          <div class="tot" id="dayTot"></div>
+          <div class="kpi" id="dayTot"></div>
           <div id="dayMeals" style="margin-top:10px"></div>
         </div>
         <div class="card">
@@ -416,6 +416,12 @@ nav button{font-size:.62rem}
           <div class="muted" style="margin-bottom:8px">Tap the code, save. Comment only if something was added, swapped or skipped.</div>
           <div class="chips" id="logChips"></div>
           <div style="margin-top:10px"><label>Time</label><input type="time" id="logTime"></div>
+          <div id="varBox" class="hidden" style="margin-top:10px">
+            <div class="muted" style="margin-bottom:6px">Raw grams of what went in. Add a line per ingredient.</div>
+            <div id="varLines"></div>
+            <button class="btn ghost" style="margin-top:6px" onclick="varAddLine()">+ ingredient</button>
+            <div class="muted" style="margin-top:6px" id="varTot"></div>
+          </div>
           <div id="othBox" class="hidden" style="margin-top:10px">
             <div class="grid2">
               <div><label>kcal (est.)</label><input type="text" inputmode="numeric" id="othK" placeholder="e.g. 600"></div>
@@ -435,8 +441,8 @@ nav button{font-size:.62rem}
       <!-- MEALS -->
       <div id="fv-cook" class="hidden">
         <div class="muted" style="margin:0 2px 12px">
-          Raw weights. <b>M1&ndash;M6 = one day</b>: cook the whole amount once, split in two boxes (lunch + early dinner).
-          Any shake/omelette + any two portions = 2,090&ndash;2,240 kcal, 186&ndash;210 g protein. Weigh the oil.
+          Raw weights. <b>M1&ndash;M8 = one day</b>: cook the whole amount once, split in two boxes (lunch + early dinner).
+          Any shake/omelette + any two portions = 2,060&ndash;2,250 kcal, 182&ndash;215 g protein. Weigh the oil. No chickpeas anywhere.
         </div>
         <div id="mealCards"></div>
       </div>
@@ -445,14 +451,15 @@ nav button{font-size:.62rem}
       <div id="fv-shop">
         <div class="card">
           <h3>Buying for</h3>
-          <div class="muted" style="margin-bottom:8px">Tap a meal to add one day of it. Tap again for a second day, third day; then it clears.</div>
+          <div class="muted" style="margin-bottom:8px">Tap a meal for one day of it (a batch = 2 portions). Tap again for 2, 3 days; a fourth tap clears it. The list shows only what the selected meals need.</div>
           <div class="chips" id="shopPlan"></div>
         </div>
         <div class="card">
           <div class="row" style="justify-content:space-between">
             <h3 style="margin:0">Shopping list</h3>
-            <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="shopReset()">Untick all</button>
+            <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="shopReset()">Clear</button>
           </div>
+          <div class="muted" style="font-size:.8rem;margin-top:4px">Raw grams, rounded up to 50 g. Tap a quantity to type what the pack actually weighs.</div>
           <div id="shopList" style="margin-top:6px"></div>
         </div>
       </div>
@@ -645,20 +652,20 @@ const SESSIONS=[
      RIR 1 pe izolari. wu = incalziri [fractie din greutatea de lucru, reps], rinduri separate,
      excluse din volum si progresie. bar = niciodata sub bara de 20 kg. inc = cel mai mic pas real. */
   {id:'fbA', day:'Monday', name:'Full-Body A \u2014 Squat + Bench', ex:[
-    {id:'bbSquat',     sets:3, reps:'6\u201310',  rir:'2',        rest:120, inc:2.5, bar:true, wu:[[0.65,6]]},
-    {id:'bench',       sets:3, reps:'6\u201310',  rir:'2',        rest:120, inc:2.5, bar:true, wu:[[0.65,6]]},
-    {id:'supPulldown', sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   wu:[[0.65,8]]},
-    {id:'csRow',       sets:2, reps:'8\u201312',  rir:'1\u20132', rest:90,  inc:5,   wu:[[0.65,6]]},
+    {id:'bbSquat',     sets:3, reps:'6\u201310',  rir:'2',        rest:120, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]]},
+    {id:'bench',       sets:3, reps:'6\u201310',  rir:'2',        rest:120, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]]},
+    {id:'supPulldown', sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   wu:[[0.6,6]]},
+    {id:'csRow',       sets:2, reps:'8\u201312',  rir:'1\u20132', rest:90,  inc:5,   wu:[[0.6,6]]},
     {id:'seatCurl',    sets:3, reps:'10\u201315', rir:'1\u20132', rest:90,  inc:5},
     {id:'dbLat',       sets:3, reps:'12\u201320', rir:'1',        rest:75,  inc:1},
     {id:'ohTri',       sets:2, reps:'10\u201315', rir:'1',        rest:75,  inc:2.5},
     {id:'machCrunch',  sets:2, reps:'10\u201315', rir:'1',        rest:60,  inc:5}
   ]},
   {id:'fbB', day:'Wednesday', name:'Full-Body B \u2014 Leg Press + OHP', ex:[
-    {id:'legPress',    sets:3, reps:'10\u201315', rir:'2',        rest:120, inc:5,   wu:[[0.65,6]]},
-    {id:'rdl',         sets:3, reps:'6\u201310',  rir:'2',        rest:150, inc:2.5, bar:true, wu:[[0.6,6]]},
-    {id:'ohp',         sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.65,6]]},
-    {id:'sarow',       sets:3, reps:'8\u201312',  rir:'1\u20132', rest:90,  inc:2.5, wu:[[0.65,6]]},
+    {id:'legPress',    sets:3, reps:'10\u201315', rir:'2',        rest:120, inc:5,   wu:[[0.5,8],[0.75,3]]},
+    {id:'rdl',         sets:3, reps:'6\u201310',  rir:'2',        rest:150, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]]},
+    {id:'ohp',         sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.6,6]]},
+    {id:'sarow',       sets:3, reps:'8\u201312',  rir:'1\u20132', rest:90,  inc:2.5, wu:[[0.6,6]]},
     {id:'dbFly',       sets:2, reps:'12\u201315', rir:'1',        rest:75,  inc:2.5},
     {id:'machLat',     sets:2, reps:'12\u201320', rir:'1',        rest:60,  inc:5},
     {id:'hammer',      sets:2, reps:'10\u201315', rir:'1',        rest:75,  inc:2.5},
@@ -666,9 +673,9 @@ const SESSIONS=[
     {id:'seatCalf',    sets:2, reps:'12\u201315', rir:'1',        rest:60,  inc:5}
   ]},
   {id:'fbC', day:'Friday', name:'Full-Body C \u2014 Hip Thrust + Incline', ex:[
-    {id:'hipThrust',   sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   bar:true, wu:[[0.65,6]]},
-    {id:'inclDB',      sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.65,6]]},
-    {id:'cgPulldown',  sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   wu:[[0.65,8]]},
+    {id:'hipThrust',   sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   bar:true, wu:[[0.5,8],[0.75,3]]},
+    {id:'inclDB',      sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.6,6]]},
+    {id:'cgPulldown',  sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   wu:[[0.6,6]]},
     {id:'legExt',      sets:2, reps:'12\u201315', rir:'1',        rest:75,  inc:5},
     {id:'seatCurl',    sets:2, reps:'10\u201315', rir:'1',        rest:90,  inc:5},
     {id:'facePull',    sets:2, reps:'15\u201320', rir:'1',        rest:60,  inc:2.5},
@@ -776,7 +783,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-09-v11.3';
+const BUILD='2026-11-09-v11.4';
 
 /* ============================================================
    State
@@ -1776,11 +1783,14 @@ const ING={
   turkey:   {n:'Turkey breast',         kc:157,p:29,  c:0,  f:2.1, a:'Meat & fish'},
   beef:     {n:'Lean beef (rump / pulpă)',kc:150,p:26, c:0,  f:5,   a:'Meat & fish'},
   salmon:   {n:'Salmon fillet',         kc:200,p:20,  c:0,  f:13,  a:'Meat & fish'},
+  trout:    {n:'Trout fillet (păstrăv)', kc:148,p:21,  c:0,  f:6.6, a:'Meat & fish'},
+  pork:     {n:'Pork tenderloin (mușchiuleț)',kc:120,p:21,c:0,f:3.5,a:'Meat & fish'},
   cod:      {n:'Cod / hake fillet',     kc:82, p:18,  c:0,  f:0.7, a:'Meat & fish'},
   tuna:     {n:'Tuna in brine (drained)',kc:116,p:26, c:0,  f:1,   a:'Pantry'},
   egg:      {n:'Whole eggs',            kc:79, p:7,   c:0.6,f:5.5, a:'Dairy & eggs', u:'pcs'},
   eggwhite: {n:'Egg whites',            kc:52, p:11,  c:0.7,f:0.2, a:'Dairy & eggs'},
-  yog:      {n:'Greek yogurt 2%',       kc:59, p:10,  c:3.6,f:2,   a:'Dairy & eggs'},
+  yog:      {n:'Greek yogurt 2 % (or skyr)',kc:59,p:10, c:3.6,f:2,   a:'Dairy & eggs'},
+  parm:     {n:'Parmesan, grated',      kc:392,p:33,  c:0,  f:29,  a:'Dairy & eggs'},
   skyr:     {n:'Skyr natural (0–0.2 % fat)',kc:63,p:11,  c:4,  f:0.2, a:'Dairy & eggs'},
   whey:     {n:'Whey isolate',          kc:380,p:88,  c:4,  f:1,   a:'Staples'},
   creatine: {n:'Creatine monohydrate',  kc:0,  p:0,   c:0,  f:0,   a:'Staples'},
@@ -1790,11 +1800,32 @@ const ING={
   rice:     {n:'Brown rice (dry)',      kc:362,p:7.5, c:76, f:2.7, a:'Dry goods'},
   lentil:   {n:'Red lentils (dry)',     kc:352,p:25,  c:63, f:1,   a:'Dry goods'},
   quinoa:   {n:'Quinoa (dry)',          kc:368,p:14,  c:64, f:6,   a:'Dry goods'},
+  bulgur:   {n:'Bulgur (dry)',          kc:342,p:12,  c:76, f:1.3, a:'Dry goods'},
+  wwpasta:  {n:'Whole-wheat pasta (dry)',kc:348,p:13, c:67, f:2.5, a:'Dry goods'},
   chickpea: {n:'Chickpeas, canned (drained)',kc:130,p:7.5,c:19,f:2.5,a:'Pantry'},
   potato:   {n:'Potatoes',              kc:77, p:2,   c:17, f:0.1, a:'Produce'},
   spotato:  {n:'Sweet potato',          kc:86, p:1.6, c:20, f:0.1, a:'Produce'},
   rye:      {n:'Whole rye bread (slice 40 g)',kc:104,p:3.6,c:19,f:1.3,a:'Dry goods', u:'pcs'},
   broccoli: {n:'Broccoli',              kc:34, p:2.8, c:7,  f:0.4, a:'Produce'},
+  gbeans:   {n:'Green beans (fresh/frozen)',kc:31,p:1.8,c:7,  f:0.1, a:'Produce'},
+  olive:    {n:'Olives (pitted)',       kc:145,p:1,   c:4,  f:15,  a:'Pantry'},
+  apple:    {n:'Apple',                 kc:52, p:0.3, c:14, f:0.2, a:'Produce'},
+  berries:  {n:'Berries (fresh/frozen)',kc:45, p:0.8, c:9,  f:0.3, a:'Produce'},
+  kiwi:     {n:'Kiwi',                  kc:61, p:1.1, c:15, f:0.5, a:'Produce'},
+  grapes:   {n:'Grapes',                kc:69, p:0.7, c:18, f:0.2, a:'Produce'},
+  oats:     {n:'Oats (dry)',            kc:379,p:13,  c:67, f:6.5, a:'Dry goods'},
+  cottage:  {n:'Cottage cheese / brânză vaci',kc:98,p:11,c:3.4,f:4.3,a:'Dairy & eggs'},
+  milk:     {n:'Milk 1.5 %',            kc:46, p:3.4, c:4.8,f:1.5, a:'Dairy & eggs'},
+  bread:    {n:'Whole-grain bread',     kc:250,p:9,   c:42, f:3.5, a:'Dry goods'},
+  nuts:     {n:'Mixed nuts',            kc:620,p:18,  c:14, f:56,  a:'Staples'},
+  avocado:  {n:'Avocado',               kc:160,p:2,   c:9,  f:15,  a:'Produce'},
+  carrot:   {n:'Carrot',                kc:41, p:0.9, c:10, f:0.2, a:'Produce'},
+  cabbage:  {n:'Cabbage',               kc:25, p:1.3, c:6,  f:0.1, a:'Produce'},
+  mushroom: {n:'Mushrooms',             kc:22, p:3.1, c:3.3,f:0.3, a:'Produce'},
+  cheese:   {n:'Cheese, hard (telemea/cașcaval)',kc:330,p:22,c:1,f:26,a:'Dairy & eggs'},
+  beans:    {n:'White beans, cooked',   kc:139,p:9.7, c:25, f:0.4, a:'Pantry'},
+  shrimp:   {n:'Shrimp / seafood',      kc:85, p:20,  c:0,  f:0.5, a:'Meat & fish'},
+  honeyno:  {n:'Sugar / honey (avoid)', kc:380,p:0,   c:95, f:0,   a:'Pantry'},
   spinach:  {n:'Spinach',               kc:23, p:2.9, c:3.6,f:0.4, a:'Produce'},
   zucchini: {n:'Zucchini',              kc:17, p:1.2, c:3.1,f:0.3, a:'Produce'},
   pepper:   {n:'Red bell pepper',       kc:31, p:1,   c:6,  f:0.3, a:'Produce'},
@@ -1818,25 +1849,33 @@ const MEALS=[
   {code:'OML', kind:'eggs',  name:'Weekend omelette', when:'Sat / Sun first meal',
    ing:[['egg',2],['eggwhite',150],['spinach',80],['tomato',100],['pepper',80],['oil',2],['psyllium',10]],
    steps:['Sauté the vegetables in the oil 3 min (non-stick pan).','Add eggs + whites, salt, pepper; cook on low until just set.','Psyllium in a glass of water alongside (weekend fibre). No bread.']},
-  {code:'M1',  kind:'batch', name:'Chicken · brown rice · broccoli', when:'Core batch',
-   ing:[['chicken',220],['rice',90],['broccoli',300],['oil',15],['lemon',0.5],['garlic',2]],
-   steps:['Rice: rinse, 1 : 2 water, lid on, 35 min.','Chicken: salt, pepper, paprika; dry pan or oven 200 °C 20–25 min.','Broccoli: steam 5 min; dress with the oil, lemon, crushed garlic.','Split into 2 boxes: lunch and dinner.']},
-  {code:'M2',  kind:'batch', name:'Salmon · skyr-dill sauce · potatoes · salad', when:'2× / week — omega-3',
-   ing:[['salmon',200],['skyr',300],['potato',350],['lettuce',100],['tomato',100],['cucumber',100],['oil',5],['acv',10]],
-   steps:['Potatoes: boil in skin 20 min, then cool in the fridge (resistant starch).','Salmon: oven 200 °C 12–15 min, lemon.','Sauce: skyr + dill + garlic + salt, split in two pots.','Salad dressed with the oil + vinegar; keep dressing separate for the dinner box.']},
-  {code:'M3',  kind:'batch', name:'Turkey · red lentils · roasted vegetables', when:'Core batch — fibre',
-   ing:[['turkey',210],['lentil',90],['zucchini',150],['pepper',150],['onion',50],['oil',20],['garlic',2]],
-   steps:['Lentils: rinse, 1 : 2.5 water, 15 min, salt at the end.','Vegetables in chunks, oil, salt; oven 210 °C 25 min, turkey strips on the same tray for the last 15 min.','Split into 2 boxes.']},
-  {code:'M4',  kind:'batch', name:'Lean beef · quinoa · chickpea salad', when:'1–2× / week',
-   ing:[['beef',220],['quinoa',75],['chickpea',120],['tomato',150],['cucumber',150],['onion',30],['oil',10],['lemon',0.5]],
-   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min.','Beef in strips, hot pan 2–3 min a side, rest.','Chop salad, add the drained chickpeas; oil + lemon.']},
-  {code:'M5',  kind:'batch', name:'Cod · sweet potato · lentil spinach', when:'Lightest batch',
-   ing:[['cod',320],['spotato',300],['spinach',200],['lentil',40],['oil',22],['garlic',2],['lemon',0.5]],
-   steps:['Sweet potato in wedges, 10 g of the oil, oven 210 °C 30 min.','Lentils: rinse, 1 : 2.5 water, 15 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil; stir in the lentils.']},
-  {code:'M6',  kind:'batch', name:'Tuna · chickpea bowl (no cooking)', when:'Fallback — 5 minutes',
-   ing:[['tuna',200],['chickpea',330],['tomato',150],['onion',40],['spinach',80],['oil',23],['lemon',0.5]],
-   steps:['Drain tuna and chickpeas, mix everything, lemon, pepper.','Keeps 2 days in the fridge.']},
-  {code:'OTH', kind:'other', name:'Something else', when:'Enter kcal / protein estimate', ing:[], steps:[]}
+  /* v11.4 batches — every morning item × every batch audited to 2,050–2,250 kcal / 180–215 g P. Chickpeas removed. */
+  {code:'M1',  kind:'batch', name:'Chicken · brown rice · green beans', when:'Core batch',
+   ing:[['chicken',220],['rice',90],['gbeans',300],['oil',15],['lemon',0.5],['garlic',2]],
+   steps:['Rice: rinse, 1 : 2 water, lid on, 35 min.','Chicken: salt, pepper, paprika; dry pan or oven 200 °C 20–25 min.','Green beans: steam or boil 6–8 min (broccoli instead if it sits well); dress with the oil, lemon, crushed garlic.','Split into 2 boxes: lunch and dinner.']},
+  {code:'M2',  kind:'batch', name:'Trout (or salmon) · potatoes · yogurt-dill sauce · salad', when:'2× / week — omega-3',
+   ing:[['trout',240],['yog',250],['potato',350],['lettuce',100],['tomato',100],['cucumber',100],['oil',10],['acv',10]],
+   steps:['Potatoes: boil in skin 20 min, cool in the fridge (resistant starch).','Trout: oven 200 °C 12–15 min, lemon. Salmon: same, then log 200 g salmon as a Various swap or accept +50 kcal.','Sauce: yogurt + dill + garlic + salt, split in two pots.','Salad dressed with the oil + vinegar; keep dressing separate for the dinner box.']},
+  {code:'M3',  kind:'batch', name:'Turkey · bulgur · roasted vegetables', when:'Core batch — fibre',
+   ing:[['turkey',230],['bulgur',90],['zucchini',150],['pepper',150],['onion',50],['oil',20],['garlic',2]],
+   steps:['Bulgur: 1 : 2 boiling water, lid on, off the heat 15 min.','Vegetables in chunks, oil, salt; oven 210 °C 25 min, turkey strips on the same tray for the last 15 min.','Split into 2 boxes.']},
+  {code:'M4',  kind:'batch', name:'Pork tenderloin · sweet potato · yogurt sauce · salad', when:'1–2× / week',
+   ing:[['pork',280],['spotato',300],['yog',200],['tomato',150],['cucumber',150],['onion',30],['oil',18],['lemon',0.5]],
+   steps:['Sweet potato in wedges, 8 g of the oil, oven 210 °C 30 min.','Tenderloin in 2 cm medallions, hot pan 2–3 min a side, rest 5 min.','Yogurt + lemon + garlic + salt as sauce; salad with the rest of the oil.','Lean beef (220 g) may replace the pork once a week — heme iron.']},
+  {code:'M5',  kind:'batch', name:'Cod · sweet potato · spinach · yogurt-lemon', when:'Lightest batch',
+   ing:[['cod',330],['spotato',330],['spinach',200],['yog',150],['oil',24],['garlic',2],['lemon',0.5]],
+   steps:['Sweet potato in wedges, 10 g of the oil, oven 210 °C 30 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil.','Yogurt + lemon zest as sauce.']},
+  {code:'M6',  kind:'batch', name:'Tuna · quinoa · tomato-cucumber · olives (no cooking)', when:'Fallback — 10 minutes',
+   ing:[['tuna',250],['quinoa',100],['tomato',150],['cucumber',150],['olive',40],['oil',18],['lemon',0.5]],
+   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min (cook 2–3 days ahead, keeps in the fridge).','Drain tuna, mix everything, lemon, pepper.','Tuna ≤ 2 days a week (mercury).']},
+  {code:'M7',  kind:'batch', name:'Chicken · whole-wheat pasta · tomato-basil · parmesan', when:'Variety — Mediterranean',
+   ing:[['chicken',220],['wwpasta',90],['tomato',300],['onion',40],['garlic',2],['oil',14],['parm',20]],
+   steps:['Pasta: boil al dente (whole-wheat, 9–10 min).','Onion + garlic in the oil 3 min, tomato chopped or passata 10 min, basil, salt.','Chicken strips in the sauce 8–10 min; toss with the pasta, parmesan on top.']},
+  {code:'M8',  kind:'batch', name:'Frittata · potatoes · peppers · yogurt', when:'Meat-free day — 1× / week',
+   ing:[['egg',3],['eggwhite',300],['potato',300],['pepper',150],['onion',50],['oil',15],['yog',150]],
+   steps:['Potatoes diced, boil 8 min, drain.','Pepper + onion in the oil 5 min, add potatoes, pour eggs + whites, salt; oven 180 °C 20 min or lid on low.','Cut in two; yogurt on the side.']},
+  {code:'VAR', kind:'var',   name:'Various — ingredients + grams', when:'Anything not on the list, eating out, extras', ing:[], steps:[]},
+  {code:'OTH', kind:'other', name:'Estimate only (kcal / protein)', when:'When you cannot weigh anything', ing:[], steps:[]}
 ];
 const MEAL_BY=Object.fromEntries(MEALS.map(m=>[m.code,m]));
 function mealMacros(m,portions=1){
@@ -1872,6 +1911,26 @@ function pickCode(c){
   LOG_CODE=c;
   MEALS.forEach(m=>document.getElementById('chip-'+m.code).classList.toggle('on',m.code===c));
   document.getElementById('othBox').classList.toggle('hidden',c!=='OTH');
+  document.getElementById('varBox').classList.toggle('hidden',c!=='VAR');
+  if(c==='VAR'&&!document.querySelectorAll('#varLines .vline').length)varAddLine();
+}
+/* v11.4 — Various: ingredient (from ING) + raw grams per line; macros from the food table */
+const ING_SORTED=Object.keys(ING).sort((a,b)=>ING[a].n.localeCompare(ING[b].n));
+function varAddLine(){
+  const el=document.getElementById('varLines');
+  const d=document.createElement('div');d.className='vline';d.style.cssText='display:grid;grid-template-columns:1fr 84px 32px;gap:6px;margin-top:6px;align-items:center';
+  d.innerHTML=`<select class="vk" onchange="varTotals()"><option value="">— ingredient —</option>${ING_SORTED.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pcs)':''}</option>`).join('')}</select>
+    <input type="text" inputmode="decimal" class="vq" placeholder="g" oninput="varTotals()">
+    <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove();varTotals()">✕</button>`;
+  el.appendChild(d);
+}
+function varItems(){
+  return [...document.querySelectorAll('#varLines .vline')].map(l=>({k:l.querySelector('.vk').value,q:numVal(boxVal(l.querySelector('.vq')))})).filter(x=>x.k&&x.q>0);
+}
+function varMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
+function varTotals(){
+  const it=varItems(),m=varMacros(it);
+  const el=document.getElementById('varTot');if(el)el.textContent=it.length?`${m.kc} kcal · ${m.p} g P · ${m.c} g C · ${m.f} g F`:'';
 }
 async function saveMeal(){
   if(!LOG_CODE){toast('Pick a preset');return}
@@ -1880,11 +1939,16 @@ async function saveMeal(){
   const portions=1;
   const comment=document.getElementById('logCm').value.trim();
   let mac;
+  let items=null;
   if(LOG_CODE==='OTH'){
     mac={kc:Math.round(numVal(rv('othK'))||0),p:Math.round(numVal(rv('othP'))||0),c:null,f:null};
     if(!mac.kc&&!comment){toast('Add an estimate or a comment');return}
+  }else if(LOG_CODE==='VAR'){
+    items=varItems();
+    if(!items.length){toast('Add at least one ingredient with grams');return}
+    mac=varMacros(items);
   }else mac=mealMacros(MEAL_BY[LOG_CODE],portions);
-  await put('meals',{date,time,code:LOG_CODE,portions,comment,...mac,ts:Date.now()});
+  await put('meals',{date,time,code:LOG_CODE,portions,comment,...mac,items:items||undefined,ts:Date.now()});
   // a meal eaten today ends a running fast
   if(FAST_ACTIVE&&date===isoToday()){
     const [hh,mm]=(time||'00:00').split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);
@@ -1894,6 +1958,7 @@ async function saveMeal(){
   document.getElementById('logCm').value='';document.getElementById('othK').value='';document.getElementById('othP').value='';
   LOG_CODE=null;MEALS.forEach(m=>document.getElementById('chip-'+m.code).classList.remove('on'));
   document.getElementById('othBox').classList.add('hidden');
+  document.getElementById('varBox').classList.add('hidden');document.getElementById('varLines').innerHTML='';varTotals();
   await loadMeals();renderLog();toast('Meal saved');
 }
 async function deleteMeal(id){
@@ -1903,8 +1968,10 @@ async function deleteMeal(id){
 }
 function dayTotals(date){
   const ms=MEALS_ALL.filter(m=>m.date===date);
-  return {kc:ms.reduce((a,m)=>a+(m.kc||0),0),p:ms.reduce((a,m)=>a+(m.p||0),0),n:ms.length,
-    clean:ms.length>0&&ms.every(m=>m.code!=='OTH'&&!m.comment),oth:ms.filter(m=>m.code==='OTH').length};
+  const sum=k=>ms.reduce((a,m)=>a+(m[k]||0),0);
+  return {kc:sum('kc'),p:sum('p'),c:sum('c'),f:sum('f'),n:ms.length,
+    clean:ms.length>0&&ms.every(m=>m.code!=='OTH'&&m.code!=='VAR'&&!m.comment),oth:ms.filter(m=>m.code==='OTH'||m.code==='VAR').length,
+    est:ms.some(m=>m.code==='OTH')};
 }
 function totBox(n,v,tgt,unit,lowIsGood){
   const over=tgt&&v>tgt*1.05, under=tgt&&v<tgt*0.9;
@@ -1915,11 +1982,15 @@ function renderLog(){
   const dEl=document.getElementById('logDate');if(!dEl)return;
   const date=dEl.value||isoToday();
   const t=dayTotals(date);
-  document.getElementById('dayTot').innerHTML=totBox('kcal',t.kc,TGT.kcal,'',true)+totBox('protein',t.p,TGT.prot,'g',false);
+  const kk=(n,v,sub,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v}<span style="font-size:.7rem;color:var(--muted)"> ${sub}</span></div></div>`;
+  const kcCls=t.kc?(t.kc>TGT.kcal*1.05?'bad':t.kc<TGT.kcal*0.9?'warn':'ok'):'', pCls=t.p?(t.p>=TGT.prot?'ok':'warn'):'';
+  document.getElementById('dayTot').innerHTML=kk('kcal',t.kc,'/ '+TGT.kcal,kcCls)+kk('Protein',t.p,'/ '+TGT.prot+' g',pCls)+
+    kk('Carbs',t.c,'g'+(t.est?' (est. day)':''),'')+kk('Fat',t.f,'g'+(t.f&&t.f<45?' · < 45':''),t.f&&t.f<45&&t.n>=3?'warn':'');
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   document.getElementById('dayMeals').innerHTML=ms.length?ms.map(m=>`<div class="ml">
       <div class="code">${m.code}</div>
       <div style="flex:1"><div class="nm">${MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
+        ${m.items&&m.items.length?`<div class="cm">${m.items.map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(ING[x.k]&&ING[x.k].u==='pcs'?' pcs':' g')).join(' · ')}</div>`:''}
         ${m.comment?`<div class="cm">${esc(m.comment)}</div>`:''}</div>
       <div class="mac"><b>${m.p||0}P</b><br>${m.kc||0} kcal</div>
       <button class="x" onclick="deleteMeal(${m.id})">✕</button></div>`).join('')
@@ -1930,8 +2001,8 @@ function renderLog(){
     const codes=MEALS_ALL.filter(m=>m.date===d).map(m=>m.code).join(' · ');
     const kcCls=x.kc>TGT.kcal*1.05?'bad':'ok', pCls=x.p>=TGT.prot?'ok':'warn';
     return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();window.scrollTo(0,0)">
-      <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">other ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
-      <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} g protein</div></div></div>`}).join('');
+      <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">various ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
+      <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} P · ${x.c} C · ${x.f} F</div></div></div>`}).join('');
   document.getElementById('logHist').innerHTML=hist||'<div class="muted">No meals logged yet.</div>';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -1939,7 +2010,7 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 /* ---- MEALS: everything visible, raw weights for one day (2 portions for M1–M6) ---- */
 function renderMeals(){
   const el=document.getElementById('mealCards');if(!el)return;
-  el.innerHTML=MEALS.filter(m=>m.kind!=='other').map(m=>{
+  el.innerHTML=MEALS.filter(m=>m.kind!=='other'&&m.kind!=='var').map(m=>{
     const n=m.kind==='batch'?2:1, mac=mealMacros(m,1);
     return `<div class="card">
       <h3><span style="color:var(--txt)">${m.code}</span> &nbsp;${m.name}</h3>
@@ -1950,35 +2021,39 @@ function renderMeals(){
     </div>`}).join('');
 }
 
-/* ---- SHOP  (settings 'shop': {plan:{M1:n,...}, ticked:{name:true}}) ---- */
-let SHOP={plan:{},ticked:{}};
-async function loadShop(){const s=await get1('settings','shop');if(s&&s.value)SHOP={...SHOP,...s.value}}
+/* ---- SHOP (settings 'shop': {plan:{code:n}, qty:{ingKey:grams}}) — v11.4
+   Only the selected meals' raw ingredients, summed. Quantities round up to 50 g (pcs up to whole),
+   and any quantity can be overridden with the real pack weight; overrides are kept until Clear. ---- */
+let SHOP={plan:{},qty:{}};
+async function loadShop(){const s=await get1('settings','shop');if(s&&s.value)SHOP={plan:(s.value.plan||{}),qty:(s.value.qty||{})}}
 async function saveShop(){await put('settings',{key:'shop',value:SHOP})}
 async function shopCycle(code){SHOP.plan[code]=((SHOP.plan[code]||0)+1)%4;await saveShop();renderShop()}
-async function shopTick(name){SHOP.ticked[name]=!SHOP.ticked[name];await saveShop();renderShop()}
-async function shopReset(){SHOP.ticked={};await saveShop();renderShop()}
+async function shopReset(){SHOP={plan:{},qty:{}};await saveShop();renderShop()}
+async function shopSetQty(k,v){const n=numVal(v);if(n==null||n<=0)delete SHOP.qty[k];else SHOP.qty[k]=n;await saveShop();renderShop()}
+function shopNeed(){
+  const need={};
+  MEALS.filter(m=>m.kind==='batch'||m.kind==='eggs'||m.kind==='shake').forEach(m=>{
+    const n=(SHOP.plan[m.code]||0)*(m.kind==='batch'?2:1);if(!n)return;
+    m.ing.forEach(([k,q])=>{need[k]=(need[k]||0)+q*n})});
+  return need;
+}
 function renderShop(){
   const pl=document.getElementById('shopPlan');if(!pl)return;
-  const batches=[...MEALS.filter(m=>m.kind==='batch'),...MEALS.filter(m=>m.kind==='eggs')];
-  const days=batches.reduce((a,m)=>a+(SHOP.plan[m.code]||0),0);
-  pl.innerHTML=batches.map(m=>{const c=SHOP.plan[m.code]||0;
+  const sel=[...MEALS.filter(m=>m.kind==='batch'),...MEALS.filter(m=>m.kind==='eggs'),...MEALS.filter(m=>m.kind==='shake')];
+  const days=sel.reduce((a,m)=>a+(SHOP.plan[m.code]||0),0);
+  pl.innerHTML=sel.map(m=>{const c=SHOP.plan[m.code]||0;
     return `<button class="chip ${c?'on':''}" onclick="shopCycle('${m.code}')"><span class="c">${m.code}</span>${m.name}${c?' <b>×'+c+'</b>':''}</button>`}).join('')+
-    `<div class="muted" style="margin-top:10px;width:100%">${days?days+' day(s) of meals selected.':'Nothing selected — the list below is empty.'}</div>`;
-  // aggregate: one tap = one day = 2 portions (OML = 1 portion)
-  const need={};
-  batches.forEach(m=>{const n=(SHOP.plan[m.code]||0)*(m.kind==='batch'?2:1);if(!n)return;
-    m.ing.forEach(([k,q])=>{need[k]=(need[k]||0)+q*n})});
-  const aisles=['Meat & fish','Dairy & eggs','Produce','Dry goods','Pantry'];
-  const row=(k,qty)=>{const g=ING[k],done=!!SHOP.ticked[k];
-    return `<div class="shop ${done?'ok':''}" onclick="shopTick('${k}')"><div class="box">${done?'✓':''}</div><div class="nm">${g.n}</div><div class="q">${qty}</div></div>`};
-  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return Math.ceil(q)+' pcs';return q>=1000?(q/1000).toFixed(1)+' kg':Math.ceil(q/50)*50+' g'};
-  let html=aisles.map(a=>{const items=Object.keys(need).filter(k=>ING[k].a===a);if(!items.length)return '';
-    return `<div class="fgrp"><div class="hd">${a}</div>${items.map(k=>row(k,fmtQ(k,need[k]))).join('')}</div>`}).join('');
-  const staples=['whey','creatine','psyllium','walnut','banana','egg','eggwhite','oil','acv'];
-  html+=`<div class="fgrp"><div class="hd">Shake &amp; staples — check stock</div>${staples.filter(k=>!need[k]||ING[k].a==='Staples').map(k=>row(k,k==='banana'?'3 / week':k==='egg'?'6 + whites':'stock')).join('')}</div>`;
-  html+=`<div class="fgrp"><div class="hd">Always</div>${['Black coffee','Salt, pepper, paprika, dill, turmeric','Sparkling water','Frozen broccoli / spinach (backup)'].map(n=>{const done=!!SHOP.ticked[n];
-    return `<div class="shop ${done?'ok':''}" onclick="shopTick('${n}')"><div class="box">${done?'✓':''}</div><div class="nm">${n}</div><div class="q"></div></div>`}).join('')}</div>`;
-  document.getElementById('shopList').innerHTML=html;
+    `<div class="muted" style="margin-top:10px;width:100%">${days?days+' meal-day(s) selected.':'Nothing selected — the list below is empty.'}</div>`;
+  const need=shopNeed();
+  const aisles=['Meat & fish','Dairy & eggs','Produce','Dry goods','Pantry','Staples'];
+  const roundQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return Math.ceil(q);const st=g.a==='Staples'?10:50;return Math.ceil(q/st)*st};
+  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return q+' pcs';return q>=1000?(q/1000).toFixed(q%1000?2:0).replace(/\.?0+$/,'')+' kg':q+' g'};
+  const row=k=>{const g=ING[k],calc=roundQ(k,need[k]),ov=SHOP.qty[k],q=ov!=null?ov:calc;
+    return `<div class="shop"><div class="nm">${g.n}<div class="muted" style="font-size:.74rem">needed ${fmtQ(k,calc)}${ov!=null?' · bought '+fmtQ(k,ov):''}</div></div>
+      <input type="text" inputmode="decimal" value="${q}" style="width:84px;text-align:right;padding:8px" onchange="shopSetQty('${k}',this.value)"><span class="q">${g.u==='pcs'?'pcs':'g'}</span></div>`};
+  const html=aisles.map(a=>{const items=Object.keys(need).filter(k=>ING[k].a===a);if(!items.length)return '';
+    return `<div class="fgrp"><div class="hd">${a}</div>${items.map(row).join('')}</div>`}).join('');
+  document.getElementById('shopList').innerHTML=html||'<div class="muted">Select meals above.</div>';
 }
 
 /* ============================================================

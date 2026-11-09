@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-09-v11.3`
+**Build:** `2026-11-09-v11.4`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -17,6 +17,16 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Food** | **Log** a meal by tapping its code (+ optional comment) · **Meals** raw weights for one day of each preset · **Shop** tap the meals you'll buy for, get the aggregated raw-weight list · **List** approved foods |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
+
+---
+
+## v11.4 (9 Nov 2026)
+
+1. **Warm-ups redefined.** Heavy barbell / leg-press lifts (squat, bench, RDL, hip thrust, leg press) get two warm-up rows: ~50 % × 8 and ~75 % × 3. Dumbbell, row and pulldown compounds get one: ~60 % × 6. Warm-ups are computed from the working weight, rounded to the exercise increment, and stay excluded from volume. The point: ramp up fast and low-rep, then do **three working sets at one load**. The export showed ramps (40/60/60) being logged as working sets, which halves the real hard-set count.
+2. **Meal set rebuilt — eight batches, no chickpeas.** M1 chicken · brown rice · green beans; M2 trout (or salmon) · potatoes · yogurt-dill · salad; M3 turkey · bulgur · roasted vegetables; M4 pork tenderloin · sweet potato · yogurt · salad; M5 cod · sweet potato · spinach · yogurt-lemon; M6 tuna · quinoa · tomato-cucumber · olives; M7 chicken · whole-wheat pasta · tomato-basil · parmesan; M8 frittata · potatoes · peppers · yogurt. Skyr → Greek yogurt 2 %. Every morning item × every batch (24 days) lands in 2,060–2,250 kcal and 182–215 g protein, fat ≥ 53 g — verified with the app's own `mealMacros`.
+3. **Various (VAR).** Pick ingredients from the food table and type raw grams, several lines per meal; macros are computed and the lines are stored with the meal (`items:[{k,q}]`) so an export can be analysed. **OTH** remains for a bare kcal/protein estimate. Day totals now show kcal, protein, carbs and fat; the 14-day history shows P / C / F per day.
+4. **Shop rebuilt.** Select meals with day counts (batches, omelette, shakes); the list contains **only** the selected meals' raw ingredients, summed and rounded up to 50 g (10 g for staples, whole pieces for eggs/lemons/garlic). Every quantity is an input: type the real pack weight and it is kept until Clear. No stock/always sections, no ticking.
+5. Food table extended (trout, pork tenderloin, bulgur, whole-wheat pasta, parmesan, olives, green beans, fruit, oats, cottage cheese, bread, nuts, avocado, carrot, cabbage, mushrooms, cheese, white beans, shrimp) so Various covers normal eating out.
 
 ---
 
@@ -146,7 +156,7 @@ Import merges rather than overwrites: workouts are de-duplicated on `date|sessio
 
 Copy `index.html`, `favicon.ico` and `apple-touch-icon.png` to the repo root on `main`. GitHub Pages publishes in 1–2 minutes.
 
-The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-09-v11.3` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
+The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-09-v11.4` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
 
 ---
 
