@@ -75,6 +75,16 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .setrow input{padding:12px 8px;text-align:center;font-size:1.15rem;font-weight:700;
   font-variant-numeric:tabular-nums}
 .setrow input.tgt{color:#8fb989;font-weight:600}
+/* v11.3: last session's values live ONLY in the placeholder */
+.setrow input.last::placeholder{color:#8fb989;font-weight:700}
+.fastBox .sec{font-size:1.6rem;color:var(--muted);font-weight:600}
+.fastBox .est{margin-top:8px;color:var(--txt);font-size:.95rem}
+.fastBox .est b{color:#ffb020}
+.circ{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.circ .c{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center}
+.circ .c .n{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+.circ .c .v{color:var(--green);font-weight:700;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.circ .c .d{font-size:.72rem;color:var(--muted)}
 /* v11.2: value parked in the placeholder while the box is being typed into */
 .setrow input::placeholder{color:#55704f;font-weight:600;opacity:1}
 input::placeholder{opacity:1}
@@ -237,7 +247,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.2 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.3 · gym · fast · food</div>
   </header>
 
   <main>
@@ -290,12 +300,27 @@ nav button{font-size:.62rem}
           <div><label>Fat (kg)</label><input type="text" inputmode="decimal" id="mFat"></div>
           <div><label>Waist (cm)</label><input type="text" inputmode="decimal" id="mWaist"></div>
         </div>
+        <div class="muted" style="margin-top:12px;font-size:.8rem">Circumferences (cm) — monthly, Monday, fasted, after 2 rest days, left side, relaxed.</div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label>Biceps</label><input type="text" inputmode="decimal" id="mBiceps"></div>
+          <div><label>Forearm</label><input type="text" inputmode="decimal" id="mForearm"></div>
+          <div><label>Chest</label><input type="text" inputmode="decimal" id="mChest"></div>
+          <div><label>Thigh</label><input type="text" inputmode="decimal" id="mThigh"></div>
+          <div><label>Calf</label><input type="text" inputmode="decimal" id="mCalf"></div>
+        </div>
+        <div class="muted" style="margin-top:12px;font-size:.8rem">Blood pressure — seated, 5 min rest, morning before coffee; weekly once the 7-day series is done.</div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label>Systolic</label><input type="text" inputmode="numeric" id="mSys"></div>
+          <div><label>Diastolic</label><input type="text" inputmode="numeric" id="mDia"></div>
+          <div><label>Pulse</label><input type="text" inputmode="numeric" id="mPulse"></div>
+        </div>
         <button class="btn primary" style="margin-top:12px" onclick="saveMetrics()">Save</button>
       </div>
 
       <div class="card">
         <h3>Dashboard</h3>
         <div class="kpi" id="kpis"></div>
+        <div id="circCard" style="margin-top:12px"></div>
       </div>
 
       <div class="card" style="border-color:#3a2a0a">
@@ -353,7 +378,7 @@ nav button{font-size:.62rem}
       <div class="card" id="fastCard"></div>
       <div class="card">
         <h3>Last 7 days</h3>
-        <div class="tot" id="fastKpi"></div>
+        <div class="kpi" id="fastKpi"></div>
         <div class="muted" style="margin-top:10px">
           Target <b style="color:var(--green)" id="fastTgtLbl">16</b> h. Morning shake or first meal ends the fast.
           Gym days: train fasted at 07:00, black coffee is fine, shake after the 16 h are up.
@@ -459,6 +484,8 @@ nav button{font-size:.62rem}
           <div><label>Protein g / day</label><input type="text" inputmode="numeric" id="tProt"></div>
           <div><label>Fast target (h)</label><input type="text" inputmode="decimal" id="tFast"></div>
           <div><label>Goal weight (kg)</label><input type="text" inputmode="decimal" id="tGoalW"></div>
+          <div><label>Age (y) — fast estimate</label><input type="text" inputmode="numeric" id="tAge"></div>
+          <div><label>Height (cm) — fast estimate</label><input type="text" inputmode="numeric" id="tHeight"></div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="saveTargets()">Save targets</button>
       </div>
@@ -749,7 +776,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-05-v11.2';
+const BUILD='2026-11-09-v11.3';
 
 /* ============================================================
    State
@@ -881,14 +908,18 @@ function workingOf(L){
   const topW=Math.max(...done.map(x=>x.w));
   return {topW,work:done.filter(x=>topW===0||x.w>=0.8*topW)};
 }
+/* v11.3: last session's sets VERBATIM, by set index. Set j today shows set j of last
+   time; if last time had fewer sets, the extra rows are empty. No 80 % filter, no padding,
+   no suggestion. The values live in the placeholder only — the box itself starts empty
+   and a set cannot be confirmed until both numbers are typed (boxVal never reads placeholders). */
 function targetSets(exDef){
   const L=lastMap[exDef.id];
   if(!L||!L.sets.length)return null;
-  const {work}=workingOf(L);
-  if(!work.length)return null;
+  const sets=L.sets.filter(x=>x.r!=null||x.w!=null);
+  if(!sets.length)return null;
   const n=exDef.sets, out=[];
-  for(let j=0;j<n;j++){const src=work[Math.min(j,work.length-1)];out.push({w:src.w,r:src.r})}
-  return {sets:out, lastTop:work.map(x=>x.w+'×'+x.r).join(', '), lastDate:L.date};
+  for(let j=0;j<n;j++){const src=sets[j];out.push(src?{w:src.w,r:src.r}:null)}
+  return {sets:out, lastTop:sets.map(x=>(x.w==null?'bw':x.w)+'\u00D7'+x.r).join(', '), lastDate:L.date};
 }
 /* Warm-up rows for today: actual kg from the working weight, rounded to the exercise
    increment (never finer than 2.5 kg); barbell lifts never below the 20 kg bar. */
@@ -1106,7 +1137,8 @@ function renderRun(){
     const T=targetSets({id:e.exId,reps:e.targetReps,sets:e.sets.length,inc:e.inc});
     /* Warm-ups: computed once from today's working weight (target, or first box the user typed). */
     const typed=e.sets.find(s=>s.weight!=null);
-    const workW=typed?typed.weight:(T?T.sets[0].w:null);
+    const lastTopW=T?Math.max(0,...T.sets.filter(x=>x&&x.w!=null).map(x=>x.w)):0;
+    const workW=typed?typed.weight:(lastTopW>0?lastTopW:null);
     if(e.wu&&!(e.wuSets||[]).length&&workW)e.wuSets=warmupSets({wu:e.wu,inc:e.inc,bar:e.bar},workW);
     const dis0=RUNNING?'':'disabled';
     const wuRows=(e.wuSets||[]).map((s,j)=>`<div class="setrow wu ${s.done?'ok':''}" id="wr-${i}-${j}">
@@ -1118,19 +1150,20 @@ function renderRun(){
     const rows=e.sets.map((s,j)=>{
       const tv=T&&T.sets[j]?T.sets[j]:null;
       const touchedW=s.weight!=null, touchedR=s.reps!=null;
-      const wVal=touchedW?s.weight:(tv?tv.w:'');
-      const rVal=touchedR?s.reps :(tv?tv.r:'');
+      const wVal=touchedW?s.weight:'';
+      const rVal=touchedR?s.reps :'';
+      const phW=tv&&tv.w!=null?tv.w:'kg', phR=tv&&tv.r!=null?tv.r:(e.unit==='sec'?'sec':'reps');
       const dis=RUNNING?'':'disabled';
       return `<div class="setrow ${s.done?'ok':''}" id="sr-${i}-${j}">
         <div class="n">${j+1}</div>
-        <input type="text" inputmode="decimal" placeholder="kg" class="${!touchedW&&tv?'tgt':''}" ${dis}
+        <input type="text" inputmode="decimal" placeholder="${phW}" class="${tv&&tv.w!=null?'last':''}" ${dis}
           id="w-${i}-${j}" value="${wVal}" oninput="setVal(${i},${j},'weight',this.value)">
-        <input type="text" inputmode="numeric" placeholder="${e.unit==='sec'?'sec':'reps'}" class="${!touchedR&&tv?'tgt':''}" ${dis}
+        <input type="text" inputmode="numeric" placeholder="${phR}" class="${tv&&tv.r!=null?'last':''}" ${dis}
           id="r-${i}-${j}" value="${rVal}" oninput="setVal(${i},${j},'reps',this.value)">
         <button class="chk" ${dis} onclick="toggleSet(${i},${j})">${s.done?'\u2713':'\u25CB'}</button>
       </div>`;
     }).join('');
-    const ref=T?`<div class="muted" style="margin-top:8px;font-size:.88rem">Last: ${T.lastTop} (${fmtD(T.lastDate)})</div>`:'';
+    const ref=T?`<div class="muted" style="margin-top:8px;font-size:.88rem">Last (${fmtD(T.lastDate)}): ${T.lastTop} \u2014 shown in the boxes, type what you do today</div>`:'';
     const hintHtml='';
     return `<div class="ex ${doneAll?'done':''}" id="ex-${i}">
       <div class="ex-h">
@@ -1277,10 +1310,13 @@ async function saveMetrics(){
   if(m!==undefined)p.muscleMass=m;
   if(f!==undefined)p.fatMass=f;
   if(ws!==undefined)p.waist=ws;
+  /* v11.3: circumferences + blood pressure (metrics store, additive, export v4 unchanged) */
+  [['mBiceps','biceps'],['mForearm','forearm'],['mChest','chest'],['mThigh','thigh'],['mCalf','calf'],
+   ['mSys','sys'],['mDia','dia'],['mPulse','pulse']].forEach(([id,k])=>{const v=num(id);if(v!==undefined)p[k]=v});
   if(!Object.keys(p).length){toast('Nothing to save');return}
   if(p.weight&&p.fatMass){p.fatPct=+(p.fatMass/p.weight*100).toFixed(1);p.leanMass=+(p.weight-p.fatMass).toFixed(1)}
   await saveMetricsForDay(d,p);
-  ['mWeight','mMuscle','mFat','mWaist'].forEach(i=>document.getElementById(i).value='');
+  ['mWeight','mMuscle','mFat','mWaist','mBiceps','mForearm','mChest','mThigh','mCalf','mSys','mDia','mPulse'].forEach(i=>document.getElementById(i).value='');
   toast('Saved');await renderStats();
 }
 
@@ -1288,6 +1324,24 @@ async function getBody(){
   const m=await all('metrics');
   return m.filter(x=>x.weight!=null||x.muscleMass!=null||x.fatMass!=null||x.waist!=null)
           .sort((a,b)=>a.date.localeCompare(b.date));
+}
+const CIRC_KEYS=[['biceps','Biceps'],['forearm','Forearm'],['chest','Chest'],['thigh','Thigh'],['calf','Calf']];
+async function renderCirc(){
+  const el=document.getElementById('circCard');if(!el)return;
+  const m=(await all('metrics')).sort((a,b)=>a.date.localeCompare(b.date));
+  const rows=m.filter(x=>CIRC_KEYS.some(([k])=>x[k]!=null));
+  const bp=m.filter(x=>x.sys!=null||x.dia!=null);
+  const L=rows[rows.length-1]||null, P=rows[rows.length-2]||null;
+  const days=L?Math.round((Date.now()-Date.parse(L.date))/864e5):null;
+  const due=days==null||days>35;
+  const cells=CIRC_KEYS.map(([k,n])=>{const v=L?L[k]:null,d=(L&&P&&P[k]!=null&&v!=null)?v-P[k]:null;
+    return `<div class="c"><div class="n">${n}</div><div class="v">${v!=null?v:'\u2014'}</div><div class="d">${d!=null?(d>0?'+':'')+d.toFixed(1)+' cm':(L?'':'')}</div></div>`}).join('');
+  const lb=bp[bp.length-1]||null; const bdays=lb?Math.round((Date.now()-Date.parse(lb.date))/864e5):null;
+  const bpTxt=lb?`BP <b style="color:${lb.sys>=135||lb.dia>=85?'var(--amber)':'var(--green)'}">${lb.sys??'\u2014'}/${lb.dia??'\u2014'}</b>${lb.pulse!=null?' \u00B7 pulse '+lb.pulse:''} (${fmtD(lb.date)}${bdays>90?' \u2014 <span style="color:var(--amber)">older than 3 months</span>':''})`
+                 :'<span style="color:var(--amber)">No blood-pressure reading on record.</span>';
+  el.innerHTML=`<div class="muted" style="font-size:.8rem">Circumferences ${L?'\u00B7 '+fmtD(L.date)+' \u00B7 '+days+' d ago':''}${due?' \u00B7 <span style="color:var(--amber)">measure (monthly)</span>':''}</div>
+    <div class="circ">${cells}</div>
+    <div class="muted" style="font-size:.8rem;margin-top:8px">${bpTxt}</div>`;
 }
 
 function kpi(n,v,u,dlt,inv){
@@ -1322,6 +1376,7 @@ async function renderStats(){
     kpi('Protein avg 7d',avgMeals7('p'),'/ '+TGT.prot+' g',null,false)+
     kpi('To goal weight',w!=null?+(w-TGT.goalW).toFixed(1):null,'kg',null,true);
   await renderHealth();
+  await renderCirc();
 
   drawMulti('chartBody',[
     {d:b.filter(x=>x.weight!=null).map(x=>({x:x.date,y:x.weight})),c:'#39FF14'},
@@ -1332,12 +1387,14 @@ async function renderStats(){
   await drawVolume();
   await renderMuscleTable();
 
-  const rows=b.slice().reverse().slice(0,30).map(x=>`<tr>
-    <td>${x.date}</td><td>${x.weight??'\u2014'}</td><td>${x.muscleMass??'\u2014'}</td>
-    <td>${x.fatMass??'\u2014'}</td><td>${x.waist??'\u2014'}</td></tr>`).join('');
+  const allM=(await all('metrics')).filter(x=>x.weight!=null||x.muscleMass!=null||x.fatMass!=null||x.waist!=null||x.biceps!=null||x.sys!=null)
+    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+  const rows=allM.map(x=>`<tr>
+    <td>${x.date}</td><td>${x.weight??'\u2014'}</td><td>${x.waist??'\u2014'}</td>
+    <td>${x.biceps??'\u2014'}</td><td>${x.thigh??'\u2014'}</td><td>${x.sys!=null?x.sys+'/'+(x.dia??'?'):'\u2014'}</td></tr>`).join('');
   document.getElementById('histTable').innerHTML=
-    `<tr><th>Date</th><th>kg</th><th>Muscle</th><th>Fat</th><th>Waist</th></tr>`+
-    (rows||'<tr><td colspan="5" class="muted">No data</td></tr>');
+    `<tr><th>Date</th><th>kg</th><th>Waist</th><th>Biceps</th><th>Thigh</th><th>BP</th></tr>`+
+    (rows||'<tr><td colspan="6" class="muted">No data</td></tr>');
 }
 
 async function weekCount(){
@@ -1550,19 +1607,20 @@ async function wipe(){
 /* ============================================================
    v11 — TARGETS (Settings → Targets)
    ============================================================ */
-const TARGET_DEFAULT={kcal:2150, prot:185, fastH:16, goalW:86};
+const TARGET_DEFAULT={kcal:2150, prot:185, fastH:16, goalW:86, age:45, height:182};
 let TGT={...TARGET_DEFAULT};
 async function loadTargets(){
   const s=await get1('settings','targets');
   TGT={...TARGET_DEFAULT,...((s&&s.value)||{})};
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
-  set('tKcal',TGT.kcal);set('tProt',TGT.prot);set('tFast',TGT.fastH);set('tGoalW',TGT.goalW);
+  set('tKcal',TGT.kcal);set('tProt',TGT.prot);set('tFast',TGT.fastH);set('tGoalW',TGT.goalW);set('tAge',TGT.age);set('tHeight',TGT.height);
   const l=document.getElementById('fastTgtLbl');if(l)l.textContent=TGT.fastH;
 }
 async function saveTargets(){
   const g=id=>numVal(rv(id));
   const t={kcal:g('tKcal')||TARGET_DEFAULT.kcal,prot:g('tProt')||TARGET_DEFAULT.prot,
-    fastH:g('tFast')||TARGET_DEFAULT.fastH,goalW:g('tGoalW')||TARGET_DEFAULT.goalW};
+    fastH:g('tFast')||TARGET_DEFAULT.fastH,goalW:g('tGoalW')||TARGET_DEFAULT.goalW,
+    age:g('tAge')||TARGET_DEFAULT.age,height:g('tHeight')||TARGET_DEFAULT.height};
   await put('settings',{key:'targets',value:t});
   await loadTargets();toast('Targets saved');
   renderFast();renderLog();renderStats();
@@ -1574,6 +1632,23 @@ async function saveTargets(){
 let FAST_ACTIVE=null, fastTimer=null, FAST_HIST=[], fastEditId=null;
 const H=3600000;
 function fmtHM(ms){const h=Math.floor(ms/H),m=Math.floor((ms%H)/60000);return h+':'+pad(m)}
+function fmtHMS(ms){const h=Math.floor(ms/H),m=Math.floor((ms%H)/60000),s=Math.floor((ms%60000)/1000);return h+':'+pad(m)+'<span class="sec">:'+pad(s)+'</span>'}
+/* v11.3 — fat oxidised during a fast (ESTIMATE, not net loss).
+   Energy: Mifflin-St Jeor BMR (latest weight, Settings age/height), spent at BMR rate
+   (rest, sleep, sitting) — lifting or Zone 2 inside the fast is NOT added.
+   Fuel mix: fraction of energy from fat rises as liver glycogen empties —
+   45 % in the first 4 h after the last meal, 45→75 % over h 4–12, 75→85 % over h 12–18,
+   85 % after (Cahill 2006; Horton 1998 indirect calorimetry). 9.4 kcal per g fat.
+   Net fat loss over the day = this minus what the eating window puts back; the 4-week
+   scale trend is the real number. */
+let FAST_W=null;
+function fastBMR(){const w=FAST_W||TGT.goalW+8, h=TGT.height||182, a=TGT.age||45;return 10*w+6.25*h-5*a+5}
+function fatFrac(hr){return hr<4?0.45:hr<12?0.45+(hr-4)/8*0.30:hr<18?0.75+(hr-12)/6*0.10:0.85}
+function fastEstimate(ms){
+  const hrs=ms/H, kcalH=fastBMR()/24; let fatK=0;
+  const step=1/12; for(let t=0;t<hrs;t+=step){const dt=Math.min(step,hrs-t);fatK+=kcalH*dt*fatFrac(t)}
+  return {kcal:Math.round(kcalH*hrs), fatKcal:Math.round(fatK), fatG:Math.round(fatK/9.4)};
+}
 function fmtDT(ts){const d=new Date(ts);return pad(d.getDate())+'.'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
 function toLocalInput(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fromLocalInput(s){const t=Date.parse(s);return isNaN(t)?null:t}
@@ -1602,31 +1677,35 @@ function renderFast(){
     const now=Date.now();
     if(FAST_ACTIVE){
       const el=now-FAST_ACTIVE.start, tgt=(FAST_ACTIVE.target||TGT.fastH)*H, pct=Math.min(100,el/tgt*100);
-      const done=el>=tgt;
+      const done=el>=tgt, est=fastEstimate(el), left=tgt-el;
       c.innerHTML=`<div class="fastBox on">
-        <div class="st">${done?'Target reached — eat when ready':'Fasting'}</div>
-        <div class="big">${fmtHM(el)}</div>
-        <div class="sub2">since ${fmtDT(FAST_ACTIVE.start)} · target ${FAST_ACTIVE.target||TGT.fastH} h at ${fmtDT(FAST_ACTIVE.start+tgt).slice(6)}</div>
+        <div class="st">${done?'Target reached \u2014 eat when ready':'Fasting'}</div>
+        <div class="big">${fmtHMS(el)}</div>
+        <div class="sub2">since ${fmtDT(FAST_ACTIVE.start)} \u00B7 target ${FAST_ACTIVE.target||TGT.fastH} h at ${fmtDT(FAST_ACTIVE.start+tgt).slice(6)}${done?'':' \u00B7 '+fmtHM(left)+' to go'}</div>
         <div class="bar ${done?'':'blue'}"><i style="width:${pct.toFixed(1)}%"></i></div>
+        <div class="est">~<b>${est.fatG} g</b> fat oxidised \u00B7 ${est.kcal} kcal at rest, ${Math.round(est.fatKcal/Math.max(1,est.kcal)*100)} % from fat <span class="muted">(estimate)</span></div>
       </div>
       <button class="btn primary" onclick="endFast()">&#9632;&nbsp; End fast (eat)</button>
       <div style="margin-top:10px"><label>Edit start</label>
         <div class="row"><input type="datetime-local" id="fastStartEdit" value="${toLocalInput(FAST_ACTIVE.start)}">
         <button class="btn" style="width:auto" onclick="saveActiveStart()">Save</button></div></div>`;
     }else{
-      const last=FAST_HIST[0];
-      const since=last?now-last.end:null;
+      const last=FAST_HIST.find(x=>x.end!=null);
+      const dur=last?last.end-last.start:null, est=last?fastEstimate(dur):null;
+      const ok=last&&dur>=(last.target||TGT.fastH)*H;
       c.innerHTML=`<div class="fastBox off">
-        <div class="st">Eating window</div>
-        <div class="big">${since!=null?fmtHM(since):'—'}</div>
-        <div class="sub2">${last?'since the fast ended at '+fmtDT(last.end):'no fasts logged yet'}</div>
+        <div class="st">Last fast${last?(ok?' \u00B7 target met':' \u00B7 short of target'):''}</div>
+        <div class="big" style="color:${ok?'var(--green)':'#4aa3ff'}">${dur!=null?fmtHMS(dur):'\u2014'}</div>
+        <div class="sub2">${last?fmtDT(last.start)+' \u2192 '+fmtDT(last.end):'no fasts logged yet \u2014 start one after dinner'}</div>
+        ${est?`<div class="est">~<b>${est.fatG} g</b> fat oxidised \u00B7 ${est.kcal} kcal at rest <span class="muted">(estimate)</span></div>`:''}
       </div>
       <button class="btn primary" onclick="startFast()">&#9654;&nbsp; Start fast</button>
       <div class="muted" style="margin-top:8px;text-align:center;font-size:.8rem">After the early dinner. Start now, or fix the time afterwards in History.</div>`;
     }
   };
+  getBody().then(b=>{const lw=[...b].reverse().find(x=>x.weight!=null);FAST_W=lw?lw.weight:null;paint()});
   paint();
-  fastTimer=setInterval(paint,30000);
+  fastTimer=setInterval(paint,1000);
   renderFastKpi();renderFastHist();
 }
 async function saveActiveStart(){
@@ -1634,15 +1713,29 @@ async function saveActiveStart(){
   if(!t||t>Date.now()){toast('Invalid start');return}
   FAST_ACTIVE.start=t;await put('fasts',FAST_ACTIVE);await loadFasts();renderFast();toast('Start updated');
 }
+/* v11.3 dashboard: what matters for the goal is consistency (every evening), length
+   (>= target), and the fuel mix — not the eating window. */
 function renderFastKpi(){
   const el=document.getElementById('fastKpi');if(!el)return;
-  const wk=Date.now()-7*864e5;
-  const done=FAST_HIST.filter(x=>x.end!=null&&x.end>=wk);
-  const hrs=done.map(x=>(x.end-x.start)/H);
+  const now=Date.now(), wk=now-7*864e5, mo=now-30*864e5;
+  const all7=FAST_HIST.filter(x=>x.end!=null&&x.end>=wk), all30=FAST_HIST.filter(x=>x.end!=null&&x.end>=mo);
+  const hrs=all7.map(x=>(x.end-x.start)/H);
   const avg=hrs.length?hrs.reduce((a,b)=>a+b,0)/hrs.length:null;
   const hit=hrs.filter(h=>h>=TGT.fastH).length;
-  el.innerHTML=`<div class="k"><div class="n">Average fast</div><div class="v ${avg!=null&&avg>=TGT.fastH?'ok':''}">${avg!=null?avg.toFixed(1):'—'}<small> h</small></div></div>
-    <div class="k"><div class="n">≥ ${TGT.fastH} h</div><div class="v">${hit}<small> / ${done.length} fasts</small></div></div>`;
+  const sum7=hrs.reduce((a,b)=>a+b,0);
+  const fat7=all7.reduce((a,x)=>a+fastEstimate(x.end-x.start).fatG,0);
+  const longest=all30.length?Math.max(...all30.map(x=>(x.end-x.start)/H)):null;
+  // streak: consecutive completed fasts (newest first) that met their target
+  let streak=0;for(const f of FAST_HIST){if(f.end==null)continue;if((f.end-f.start)>=(f.target||TGT.fastH)*H)streak++;else break}
+  const k=(n,v,u,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v==null?'\u2014':v}<span style="font-size:.7rem;color:var(--muted)"> ${v==null?'':u}</span></div></div>`;
+  el.innerHTML=k('Fasts this week',all7.length,'/ 7',all7.length>=6?'ok':'')+
+    k('Average length',avg!=null?avg.toFixed(1):null,'h',avg!=null&&avg>=TGT.fastH?'ok':'')+
+    k('\u2265 '+TGT.fastH+' h',hit,'/ '+all7.length)+
+    k('Streak at target',streak,'fasts')+
+    k('Hours fasted, 7 d',Math.round(sum7),'/ '+TGT.fastH*7)+
+    k('Fat oxidised, 7 d (est.)',fat7?Math.round(fat7):null,'g')+
+    k('Longest, 30 d',longest!=null?longest.toFixed(1):null,'h')+
+    k('Target',TGT.fastH,'h');
 }
 function renderFastHist(){
   const el=document.getElementById('fastHist');if(!el)return;
@@ -1906,19 +1999,23 @@ const LAB_DEFS=[
   ['glu',    'Fasting glucose',   'mg/dL','< 100',                         v=>v<100?'ok':v<126?'warn':'bad'],
   ['ins',    'Fasting insulin',   'µIU/mL','< 10 (HOMA-IR < 2)',           v=>v<10?'ok':v<15?'warn':'bad'],
   ['crp',    'hs-CRP',            'mg/L', '< 1',                           v=>v<1?'ok':v<3?'warn':'bad'],
-  ['ferr',   'Ferritin',          'ng/mL','30 – 300',                      v=>v>=30&&v<=300?'ok':'warn']
+  ['ferr',   'Ferritin',          'ng/mL','30 – 300',                      v=>v>=30&&v<=300?'ok':'warn'],
+  /* v11.3 */
+  ['fe',     'Serum iron',        'µg/dL','65 – 175',                      v=>v>=65&&v<=175?'ok':'warn'],
+  ['tibc',   'TIBC',              'µg/dL','250 – 450',                     v=>v>=250&&v<=450?'ok':'warn'],
+  ['tsat',   'TSAT',              '%',    '< 45 (iron ÷ TIBC)',            v=>v<45?'ok':'bad'],
+  ['homa',   'HOMA-IR',           '',     '< 2 (glu × ins ÷ 405)',         v=>v<2?'ok':v<2.5?'warn':'bad'],
+  ['uric',   'Uric acid',         'mg/dL','< 7',                           v=>v<6?'ok':v<7?'warn':'bad'],
+  ['creat',  'Creatinine',        'mg/dL','0.7 – 1.2',                     v=>v<=1.2?'ok':'warn'],
+  ['vitd',   '25-OH vitamin D',   'ng/mL','40 – 60',                       v=>v>=40&&v<=60?'ok':v>=30?'warn':'bad'],
+  ['fit',    'FIT (occult blood)','ng/mL','< 15',                          v=>v<15?'ok':v<100?'warn':'bad'],
+  ['calpro', 'Calprotectin',      'mg/kg','< 50',                          v=>v<50?'ok':v<100?'warn':'bad']
 ];
 let LABS=[];
 async function loadLabs(){
   LABS=(await all('labs')).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!LABS.length){
-    const seeded=await get1('settings','labsSeeded');
-    if(!(seeded&&seeded.value)){
-      await put('labs',{date:'2026-10-19',cap:371,kpa:4.4,note:'Fibroscan, Spitalul CF Timișoara. Steatoză hepatică severă, fără fibroză.'});
-      await put('settings',{key:'labsSeeded',value:true});
-      LABS=await all('labs');
-    }
-  }
+  /* v11.3: the one-off lab seed was removed — personal results live in IndexedDB and
+     exports only, never in the public repo. */
 }
 function initLabForm(){
   const d=document.getElementById('labDate');if(d&&!d.value)d.value=isoToday();
@@ -1946,11 +2043,13 @@ async function renderHealth(){
       <div class="t">${t}</div></div>`}).join('');
   // goal line
   const b=await getBody();const lw=[...b].reverse().find(x=>x.weight!=null), lwa=[...b].reverse().find(x=>x.waist!=null);
-  const w=lw?lw.weight:null, start=93.6, goal=TGT.goalW;
-  const pct=w!=null?Math.max(0,Math.min(100,(start-w)/(start-goal)*100)):0;
+  const w=lw?lw.weight:null, goal=TGT.goalW;
+  const startRow=b.find(x=>x.weight!=null&&x.date>='2026-10-01'), start=startRow?startRow.weight:(w||goal);
+  const pct=(w!=null&&start>goal)?Math.max(0,Math.min(100,(start-w)/(start-goal)*100)):0;
+  const cap=latest('cap'), kpa=latest('kpa');
   document.getElementById('healthGoal').innerHTML=
-    `Diagnosis 19.10.2026: severe steatosis (CAP 371), no fibrosis (4.4 kPa) — reversible. The lever is <b>−7–10 % body weight</b>
-     (${start} → ${goal} kg), ≥150 min/week Zone 2, zero alcohol, fructose only as whole fruit. Re-check Fibroscan in ~6 months.
+    `Liver fat (CAP) ${cap?'<b>'+cap.cap+'</b> dB/m':'\u2014'} \u00B7 stiffness ${kpa?'<b>'+kpa.kpa+'</b> kPa':'\u2014'}. The lever is <b>\u22127\u201310 % body weight</b>
+     (${start} \u2192 ${goal} kg), \u2265150 min/week Zone 2, zero alcohol, fructose only as whole fruit. Re-check Fibroscan in ~6\u201312 months.
      <div class="bar amber" style="margin:10px 0 4px"><i style="width:${pct.toFixed(0)}%"></i></div>
      <span style="color:var(--txt)">Weight ${w!=null?w+' kg':'—'} · ${pct.toFixed(0)} % of the way to ${goal} kg · waist ${lwa?lwa.waist+' cm':'—'} (target &lt; 94)</span>`;
 }

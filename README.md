@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-05-v11.2`
+**Build:** `2026-11-09-v11.3`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -17,6 +17,17 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Food** | **Log** a meal by tapping its code (+ optional comment) · **Meals** raw weights for one day of each preset · **Shop** tap the meals you'll buy for, get the aggregated raw-weight list · **List** approved foods |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
+
+---
+
+## v11.3 (9 Nov 2026)
+
+1. **Set boxes start empty; last session lives in the placeholder.** Set *j* today shows set *j* of the last session of that exercise, verbatim — no ≥ 80 % "working set" filter, no padding of missing sets, no suggestion. A session that had two sets shows two placeholders and an empty third row. A set cannot be confirmed until both numbers are typed. (v11.2 still pre-filled editable values, which a checkmark could save unedited — see *Progression*.)
+2. **Fast tab rebuilt.** Timer shows `h:mm:ss`. While fasting: elapsed, time to target, and an estimate of fat oxidised so far. After *End fast*: the card freezes on the **last fast** — duration, start → end, target met or not, fat estimate. The eating-window counter is gone. Dashboard: fasts this week, average length, ≥ target count, streak at target, hours fasted in 7 days, fat oxidised in 7 days, longest in 30 days.
+3. **Fat-oxidation estimate** (`fastEstimate`): Mifflin-St Jeor BMR from the latest weight and the age/height in Settings, spent at resting rate; share of energy from fat 45 % in the first 4 h, rising to 75 % at 12 h and 85 % from 18 h; 9.4 kcal/g. It is labelled *estimate* everywhere: it is fat **oxidised during the fast**, not net fat lost — the eating window decides the net. The scale trend over 4 weeks is the real number.
+4. **Measurements: circumferences and blood pressure.** New fields biceps, forearm, chest, thigh, calf (cm) and systolic / diastolic / pulse. Stored in the existing `metrics` store (export format unchanged, v4). Stats shows the latest circumferences with deltas, flags when the last set is older than 35 days, and shows the latest BP with a flag when it is older than 3 months or none exists.
+5. **Health card:** nine more lab definitions — serum iron, TIBC, TSAT, HOMA-IR, uric acid, creatinine, 25-OH vitamin D, FIT, calprotectin.
+6. **Privacy:** the one-off lab seed (a real result hard-coded in the source) and the hard-coded starting weight were removed; the Health card now reads everything from IndexedDB. Settings gains *Age* and *Height* for the estimate (defaults in code are generic).
 
 ---
 
@@ -65,11 +76,11 @@ Weekly volume at 3 sessions: quads 8 · hamstrings 8 · chest 8 · back 9 · del
 
 ## Progression
 
-**Double progression, manual.** The boxes show the **last recorded working sets**, exactly as they were — no suggestion, no automatic increase. Hitting the top of the rep range on every set is the signal to add the smallest real increment next time, and that decision is typed in by the lifter.
+**Double progression, manual.** The boxes are empty; the **placeholder** of each set shows the same set of the last session, exactly as it was — no suggestion, no automatic increase. Hitting the top of the rep range on every set is the signal to add the smallest real increment next time, and that decision is typed in by the lifter.
 
 Increments (`inc` in `SESSIONS`): 5 kg on leg press / hip thrust / pulldowns / machines, 2.5 kg on barbell and dumbbell presses and rows, 1 kg on DB lateral raises and incline curls. Barbell lifts never go below the 20 kg bar.
 
-Confirming a set saves exactly what is in the boxes. Empty boxes are rejected.
+Confirming a set saves exactly what was typed. Empty boxes are rejected; placeholders are never read.
 
 > **Why the boxes are not a prescription.** A v3 export contained identical set-for-set entries repeated across four separate sessions (Lying Leg Curl 35 × 12 × 3 on 10.07, 21.07, 03.08, 10.08). The build of the time pre-filled a computed prescription and the checkmark saved it unedited, so part of the tonnage series was fictional. Since v10.3 the boxes are a record, not a suggestion.
 
@@ -103,6 +114,9 @@ IndexedDB, stores: `workouts`, `metrics`, `fasts`, `meals`, `labs`, `settings`, 
   exercises:[{ exId, name, targetSets, targetReps, rir, rest, unit, inc,
                wuSets:[{weight,reps,done}], sets:[{ weight, reps, done }] }] }
 
+// metrics (v11.3 adds the optional circumference and BP keys)
+{ date, weight?, waist?, muscleMass?, fatMass?, biceps?, forearm?, chest?, thigh?, calf?, sys?, dia?, pulse?, timestamp }
+
 // cardio
 { date, type:'cardio', sessionId:'zone2', startTs, endTs, z2min, avgHR, maxHR,
   targetLo, targetHi }
@@ -132,7 +146,7 @@ Import merges rather than overwrites: workouts are de-duplicated on `date|sessio
 
 Copy `index.html`, `favicon.ico` and `apple-touch-icon.png` to the repo root on `main`. GitHub Pages publishes in 1–2 minutes.
 
-The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-05-v11.2` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
+The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-09-v11.3` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
 
 ---
 
