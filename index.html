@@ -75,6 +75,13 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .setrow input{padding:12px 8px;text-align:center;font-size:1.15rem;font-weight:700;
   font-variant-numeric:tabular-nums}
 .setrow input.tgt{color:#8fb989;font-weight:600}
+.mrow{display:grid;grid-template-columns:1fr 92px 34px;gap:6px;margin-top:6px;align-items:center}
+.mrow .nm{font-size:.92rem}
+.mrow input,.mrow select{padding:9px 8px}
+.mrow input.q{text-align:right}
+.mrow input.q::placeholder{color:#5f6f5c;font-weight:500}
+.mrow .u{color:var(--muted);font-size:.8rem}
+.trend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 /* v11.3: last session's values live ONLY in the placeholder */
 .setrow input.last::placeholder{color:#8fb989;font-weight:700}
 .fastBox .sec{font-size:1.6rem;color:var(--muted);font-weight:600}
@@ -247,7 +254,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4.2 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.5 · gym · fast · food</div>
   </header>
 
   <main>
@@ -364,7 +371,7 @@ nav button{font-size:.62rem}
         <h3>Sets per muscle group (7 days)</h3>
         <div class="tw"><table id="muscleTable"></table></div>
         <div class="muted" style="margin-top:8px">Retention targets while in a caloric deficit.
-        Quads and hamstrings have priority \u2014 they were under threshold in the old split.</div>
+        Quads and hamstrings have priority — they were under threshold in the old split.</div>
       </div>
 
       <div class="card">
@@ -413,23 +420,19 @@ nav button{font-size:.62rem}
         </div>
         <div class="card">
           <h3>Add meal</h3>
-          <div class="muted" style="margin-bottom:8px">Tap the code, save. Comment only if something was added, swapped or skipped.</div>
+          <div class="muted" style="margin-bottom:8px">Pick the meal, then type the raw grams you actually ate. Grey numbers are the plan; a box left empty counts as not eaten.</div>
           <div class="chips" id="logChips"></div>
           <div style="margin-top:10px"><label>Time</label><input type="time" id="logTime"></div>
-          <div id="varBox" class="hidden" style="margin-top:10px">
-            <div class="muted" style="margin-bottom:6px">Raw grams of what went in. Add a line per ingredient.</div>
-            <div id="varLines"></div>
-            <button class="btn ghost" style="margin-top:6px" onclick="varAddLine()">+ ingredient</button>
-            <div class="muted" style="margin-top:6px" id="varTot"></div>
-          </div>
-          <div id="othBox" class="hidden" style="margin-top:10px">
-            <div class="grid2">
-              <div><label>kcal (est.)</label><input type="text" inputmode="numeric" id="othK" placeholder="e.g. 600"></div>
-              <div><label>Protein g (est.)</label><input type="text" inputmode="numeric" id="othP" placeholder="e.g. 40"></div>
+          <div id="mealBox" class="hidden" style="margin-top:10px">
+            <div id="mealRows"></div>
+            <div class="row" style="gap:8px;margin-top:8px">
+              <button class="btn ghost" style="flex:1" id="mealAddBtn" onclick="mealAddRow()">+ ingredient</button>
+              <button class="btn ghost" style="flex:1" id="mealFillBtn" onclick="mealFillPlanned()">Fill planned</button>
             </div>
+            <div class="muted" style="margin-top:8px" id="mealTot"></div>
           </div>
           <label style="margin-top:10px">Comment</label>
-          <textarea id="logCm" placeholder="e.g. +1 slice rye bread, no oil, ate out"></textarea>
+          <textarea id="logCm" placeholder="optional"></textarea>
           <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save meal</button>
         </div>
         <div class="card">
@@ -442,7 +445,7 @@ nav button{font-size:.62rem}
       <div id="fv-cook" class="hidden">
         <div class="muted" style="margin:0 2px 12px">
           Raw weights. <b>M1&ndash;M8 = one day</b>: cook the whole amount once, split in two boxes (lunch + early dinner).
-          Any shake/omelette + any two portions = 2,060&ndash;2,250 kcal, 182&ndash;215 g protein. Weigh the oil. No chickpeas anywhere.
+          Shake or omelette + two portions of any batch = 2,140&ndash;2,240 kcal, 159&ndash;183 g protein. Weekends follow the same rule: omelette + one batch. No dairy foods, no chickpeas. Weigh the oil.
         </div>
         <div id="mealCards"></div>
       </div>
@@ -514,23 +517,23 @@ nav button{font-size:.62rem}
         <div id="diag" class="muted"></div>
       </div>
       <div class="card">
-        <h3>Zone 2 \u2014 calibration (22 Aug 2026)</h3>
+        <h3>Zone 2 — calibration (22 Aug 2026)</h3>
         <div class="muted">
-          Inputs: 45 y \u00B7 RHR ~67 (Jun\u2013Aug avg) \u00B7 HRmax est. Tanaka 177 (not directly measured).<br>
-          60\u201370% HRmax = 106\u2013124 \u00B7 Karvonen 50\u201360% HRR = 122\u2013133 \u00B7 MAF cap = 136.<br><br>
-          <b style="color:#4aa3ff">Working target: 118\u2013133 bpm, hard cap 135.</b><br>
-          The old 130\u2013142 target used RHR 60 and percentages set too high \u2014 for you that is Zone 3, not Zone 2.<br><br>
-          Treadmill: 6\u20136.5 km/h, 6\u201310% incline, adjust incline to keep HR at 125\u2013132.
-          Tue / Thu / Sat / Sun, 40 min each: 3 sessions = 120 min, 4 = 160. Weekly target 150. Outdoor brisk walks count \u2014 log them manually on the Gym tab.
+          Inputs: 45 y · RHR ~67 (Jun–Aug avg) · HRmax est. Tanaka 177 (not directly measured).<br>
+          60–70% HRmax = 106–124 · Karvonen 50–60% HRR = 122–133 · MAF cap = 136.<br><br>
+          <b style="color:#4aa3ff">Working target: 118–133 bpm, hard cap 135.</b><br>
+          The old 130–142 target used RHR 60 and percentages set too high — for you that is Zone 3, not Zone 2.<br><br>
+          Treadmill: 6–6.5 km/h, 6–10% incline, adjust incline to keep HR at 125–132.
+          Tue / Thu / Sat, 40 min each = 120 min, the weekly target. Move to 50 min (150 / week) when HR at the same speed and incline has dropped about 5 bpm. Outdoor brisk walks count — log them manually on the Gym tab.
           Never before lifting; separate days. Check: you can speak full sentences.
-          First week on Mi Band: compare displayed HR with a manual 15 s \u00D7 4 pulse count.
+          Read average and max HR from the Apple Watch workout summary and enter them in the manual log.
         </div>
       </div>
       <div class="card">
         <h3>Deload</h3>
         <div class="muted" style="margin-bottom:10px">
-          \u221240% sets, same weights, RIR 3\u20134, 7 days. Triggers: bench/squat regression
-          two sessions in a row, RHR &gt;5 bpm above baseline, sleep under 6 h \u00D7 3 nights.
+          −40% sets, same weights, RIR 3–4, 7 days. Triggers: bench/squat regression
+          two sessions in a row, RHR &gt;5 bpm above baseline, sleep under 6 h × 3 nights.
         </div>
         <button class="btn" id="deloadBtn" onclick="toggleDeload()"></button>
       </div>
@@ -663,18 +666,18 @@ const SESSIONS=[
   ]},
   {id:'fbB', day:'Wednesday', name:'Full-Body B \u2014 Leg Press + OHP', ex:[
     {id:'legPress',    sets:3, reps:'10\u201315', rir:'2',        rest:120, inc:5,   wu:[[0.5,8],[0.75,3]]},
-    {id:'rdl',         sets:3, reps:'6\u201310',  rir:'2',        rest:150, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]]},
-    {id:'ohp',         sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.6,6]]},
+    {id:'rdl',         sets:3, reps:'6\u201310',  rir:'2',        rest:120, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]]},
+    {id:'ohp',         sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:2.5, wu:[[0.6,6]]},
     {id:'sarow',       sets:3, reps:'8\u201312',  rir:'1\u20132', rest:90,  inc:2.5, wu:[[0.6,6]]},
     {id:'dbFly',       sets:2, reps:'12\u201315', rir:'1',        rest:75,  inc:2.5},
     {id:'machLat',     sets:2, reps:'12\u201320', rir:'1',        rest:60,  inc:5},
     {id:'hammer',      sets:2, reps:'10\u201315', rir:'1',        rest:75,  inc:2.5},
-    {id:'ohTri',       sets:2, reps:'10\u201315', rir:'1',        rest:75,  inc:2.5},
+    /* v11.5: overhead triceps removed from B (session ran 66\u201371 min; triceps stay in A and C) */
     {id:'seatCalf',    sets:2, reps:'12\u201315', rir:'1',        rest:60,  inc:5}
   ]},
   {id:'fbC', day:'Friday', name:'Full-Body C \u2014 Hip Thrust + Incline', ex:[
     {id:'hipThrust',   sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   bar:true, wu:[[0.5,8],[0.75,3]]},
-    {id:'inclDB',      sets:3, reps:'8\u201312',  rir:'2',        rest:150, inc:2.5, wu:[[0.6,6]]},
+    {id:'inclDB',      sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:2.5, wu:[[0.6,6]]},
     {id:'cgPulldown',  sets:3, reps:'8\u201312',  rir:'2',        rest:120, inc:5,   wu:[[0.6,6]]},
     {id:'legExt',      sets:2, reps:'12\u201315', rir:'1',        rest:75,  inc:5},
     {id:'seatCurl',    sets:2, reps:'10\u201315', rir:'1',        rest:90,  inc:5},
@@ -687,8 +690,8 @@ const SESSIONS=[
 ];
 
 
-/* Zone 2 \u2014 personalizat (Bogdan, 44 ani, RHR ~67, FCmax est. Tanaka 177) */
-const Z2={lo:118, hi:133, cap:135, weeklyTargetMin:150, note:'Treadmill: 6\u20136.5 km/h at 6\u201310% incline. Check: you can speak full sentences.'};
+/* Zone 2 \u2014 personal band (resting HR ~67, estimated max 177) */
+const Z2={lo:118, hi:133, cap:135, weeklyTargetMin:120, note:'Treadmill: 6\u20136.5 km/h at 6\u201310% incline. Check: you can speak full sentences.'};
 
 /* grupe musculare pentru volum s\u0103pt\u0103m\u00E2nal */
 const MUSCLE={
@@ -701,7 +704,7 @@ const MUSCLE={
   hipThrust:'glutes', oneLegCalf:'calves', seatCalf:'calves',
   machCrunch:'abs', pallof:'abs'
 };
-const MUSCLE_TARGET={quads:8, hamstrings:8, chest:8, back:11, delts:10, glutes:3, calves:4, biceps:4, triceps:6, abs:4};
+const MUSCLE_TARGET={quads:8, hamstrings:8, chest:8, back:11, delts:10, glutes:3, calves:4, biceps:4, triceps:4, abs:4};
 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
@@ -711,32 +714,31 @@ const FOODS=[
   ['Chicken breast',165,31,0,3.6,'Staple. Boiled / dry pan.'],
   ['Turkey breast',157,29,0,2.1,''],
   ['Tuna in brine',116,26,0,1,'Drained.'],
-  ['Wild salmon',180,22,0,10,'EPA/DHA. 2\u00D7 / week.'],
-  ['Mackerel',205,19,0,14,'High omega-3.'],
-  ['Sardines with bones',208,25,0,11,'Calcium + K2.'],
+  ['Salmon / trout',180,22,0,10,'EPA/DHA. 2\u00D7 / week \u2014 the oily fish of choice.'],
+  ['Mackerel',205,19,0,14,'High omega-3 but purine-rich: max 1\u00D7 / week (uric acid).'],
+  ['Sardines with bones',208,25,0,11,'Purine-rich: max 1\u00D7 / week (uric acid).'],
   ['Cod / hake',82,18,0,0.7,'Max protein density.'],
-  ['Lean beef (rump)',150,26,0,5,'2\u20133\u00D7 / week.'],
-  ['Whole eggs',143,13,1.1,10,'No yolk restriction.'],
+  ['Lean beef (rump)',150,26,0,5,'Max 1\u00D7 / week \u2014 heme iron (ferritin).'],
+  ['Pork tenderloin',120,21,0,3.5,'Lean; the default red-meat slot.'],
+  ['Whole eggs',143,13,1.1,10,'Up to ~8 yolks / week (LDL history); whites free.'],
   ['Egg whites',52,11,0.7,0.2,''],
-  ['Cottage cheese 2%',81,11,3.4,2.3,'Casein, evening.'],
-  ['Greek yogurt 2%',59,10,3.6,2,''],
   ['Whey isolate',380,88,4,1,'Post-workout or morning shake.']
  ]},
  {g:'Plant protein',i:[
   ['Lentils (dry)',352,25,63,1,'11 g fiber.'],
-  ['Chickpeas (dry)',364,19,61,6,''],
-  ['Black beans (dry)',341,21,62,1.4,''],
   ['Firm tofu',144,17,3,9,''],
   ['Edamame',122,11,10,5,'']
  ]},
  {g:'Carbs',i:[
-  ['Whole oats',389,17,66,7,'Low GI, beta-glucan (LDL).'],
+  ['Whole oats',389,17,66,7,'Beta-glucan (LDL). In the morning shake.'],
+  ['Bulgur',342,12,76,1.3,''],
+  ['Whole-wheat pasta',348,13,67,2.5,''],
   ['Brown rice',362,7.5,76,2.7,''],
   ['Quinoa',368,14,64,6,''],
   ['Sweet potato',86,1.6,20,0.1,''],
   ['White potato, cooled',77,2,17,0.1,'Cooled = resistant starch.'],
   ['Buckwheat',343,13,72,3.4,''],
-  ['Whole rye bread',259,9,48,3.3,'Max 2 slices.']
+  ['Whole rye bread',259,9,48,3.3,'2 slices with the weekend omelette.']
  ]},
  {g:'Fats',i:[
   ['Extra-virgin olive oil',884,0,0,100,'Raw. 1\u20132 tbsp.'],
@@ -775,6 +777,10 @@ const FOODS=[
  ]},
  {g:'Forbidden',i:[
   ['Alcohol',0,0,0,0,'Zero. Direct driver of liver fat.'],
+  ['Milk, yogurt, cheese',0,0,0,0,'Your choice: no dairy foods. Whey isolate stays.'],
+  ['Chickpeas, beans',0,0,0,0,'Bloating. Red lentils are fine.'],
+  ['Organ meat, anchovies',0,0,0,0,'Highest purine load (uric acid).'],
+  ['Iron supplements, iron-fortified foods',0,0,0,0,'Ferritin is high.'],
   ['Fruit juice / smoothies / honey',0,0,0,0,'Fructose load goes straight to the liver.'],
   ['Added sugar / soft drinks',0,0,0,0,''],
   ['Refined seed oils',0,0,0,0,'Sunflower, corn, soy.'],
@@ -783,7 +789,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-10-v11.4.2';
+const BUILD='2026-11-10-v11.5';
 
 /* ============================================================
    State
@@ -979,7 +985,7 @@ async function renderSessions(){
           <div style="color:#4aa3ff;font-weight:700">${Z2.lo}\u2013${Z2.hi}</div></div>
         </div>
         <div class="grid2">
-          <div><label>Avg HR (treadmill/Mi Band)</label><input type="text" inputmode="numeric" id="z2avg" placeholder="e.g. 127"></div>
+          <div><label>Avg HR (watch)</label><input type="text" inputmode="numeric" id="z2avg" placeholder="e.g. 127"></div>
           <div><label>Max HR</label><input type="text" inputmode="numeric" id="z2max" placeholder="e.g. 134"></div>
         </div>
         <button class="btn" style="margin-top:10px;border-color:#123a5e;color:#4aa3ff" onclick="finishZ2()">Finish &amp; save</button>
@@ -1370,18 +1376,35 @@ async function renderStats(){
   const [w,dw]=mk('weight'),[mu,dmu]=mk('muscleMass'),[fm,dfm]=mk('fatMass'),[wa,dwa]=mk('waist');
   const fp=(w&&fm)?+(fm/w*100).toFixed(1):null;
 
+  /* v11.5 — decisions run on the weekly mean, the 4-week rate and the waist; scale fat/muscle is noise. */
+  const DAY=864e5, nowT=Date.now(), ts=x=>Date.parse(x.date+'T12:00:00');
+  const W=b.filter(x=>x.weight!=null), mean=a=>a.length?a.reduce((q,x)=>q+x.weight,0)/a.length:null;
+  const w7=W.filter(x=>nowT-ts(x)<7*DAY), w14=W.filter(x=>nowT-ts(x)>=7*DAY&&nowT-ts(x)<14*DAY);
+  const m7=mean(w7), m14=mean(w14);
+  const w28=W.filter(x=>nowT-ts(x)<28*DAY);
+  let rate=null;
+  if(w28.length>=4&&(ts(w28[w28.length-1])-ts(w28[0]))>=13*DAY){
+    const xs=w28.map(x=>ts(x)/DAY), ys=w28.map(x=>x.weight), n=xs.length, mx=xs.reduce((q,v)=>q+v,0)/n, my=ys.reduce((q,v)=>q+v,0)/n;
+    const den=xs.reduce((q,v)=>q+(v-mx)*(v-mx),0);
+    if(den>0)rate=xs.reduce((q,v,i)=>q+(v-mx)*(ys[i]-my),0)/den*7;
+  }
+  const WA=b.filter(x=>x.waist!=null), waOld=[...WA].reverse().find(x=>nowT-ts(x)>=21*DAY);
+  const dWa4=(wa!=null&&waOld)?wa-waOld.waist:null;
+  const rateCls=rate==null?'':(rate<=-0.25&&rate>=-0.75?'ok':(rate>-0.25?'warn':'bad'));
+  const rateTxt=rate==null?'needs 4 weigh-ins over 2 weeks':(rate>-0.25?'too slow \u2014 target \u22120.4 to \u22120.5':(rate<-0.75?'too fast \u2014 muscle and urate risk':'on target'));
+  const tk=(n,v,u,sub,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v==null?'\u2014':v}<span style="font-size:.7rem;color:var(--muted)"> ${v==null?'':u}</span></div><div class="muted" style="font-size:.72rem">${sub||''}</div></div>`;
   document.getElementById('kpis').innerHTML=
-    kpi('Weight',w,'kg',dw,true)+
-    kpi('Muscle',mu,'kg',dmu,false)+
-    kpi('Fat',fm,'kg',dfm,true)+
-    kpi('Waist',wa,'cm',dwa,true)+
-    kpi('Fat %',fp,'%',null,true)+
+    tk('Weight, 7-day mean',m7!=null?m7.toFixed(1):null,'kg',w7.length+' weigh-in'+(w7.length===1?'':'s')+(m14!=null?' \u00B7 prev week '+m14.toFixed(1):''),'')+
+    tk('Rate, 4 weeks',rate!=null?(rate>0?'+':'')+rate.toFixed(2):null,'kg/wk',rateTxt,rateCls)+
+    tk('Waist',wa,'cm',dWa4!=null?((dWa4>0?'+':'')+dWa4.toFixed(1)+' cm vs '+waOld.date.slice(8,10)+'.'+waOld.date.slice(5,7)):'weekly, navel, morning',dWa4!=null?(dWa4<=-1?'ok':dWa4>=1?'bad':''):'')+
+    tk('Last weigh-in',w,'kg',dw!=null?((dw>0?'+':'')+dw.toFixed(1)+' vs previous (single readings are noise)'):'','')+
     kpi('Lifting / week',await weekCount(),'/ 3',null,false)+
     kpi('Zone 2 / week',await z2MinutesThisWeek(),'/ '+Z2.weeklyTargetMin+' min',null,false)+
     kpi('Fast avg 7d',avgFast7(),'h',null,false)+
     kpi('kcal avg 7d',avgMeals7('kc'),'/ '+TGT.kcal,null,false)+
     kpi('Protein avg 7d',avgMeals7('p'),'/ '+TGT.prot+' g',null,false)+
-    kpi('To goal weight',w!=null?+(w-TGT.goalW).toFixed(1):null,'kg',null,true);
+    kpi('To goal weight',(m7!=null?m7:w)!=null?+((m7!=null?m7:w)-TGT.goalW).toFixed(1):null,'kg',null,true)+
+    `<div class="muted" style="grid-column:1/-1;font-size:.76rem;margin-top:2px">Scale body composition (trend only, never a decision): muscle ${mu??'\u2014'} kg \u00B7 fat ${fm??'\u2014'} kg${fp!=null?' \u00B7 '+fp+' %':''}</div>`;
   await renderHealth();
   await renderCirc();
 
@@ -1614,11 +1637,13 @@ async function wipe(){
 /* ============================================================
    v11 — TARGETS (Settings → Targets)
    ============================================================ */
-const TARGET_DEFAULT={kcal:2150, prot:185, fastH:16, goalW:86, age:45, height:182};
+const TARGET_DEFAULT={kcal:2150, prot:165, fastH:16, goalW:86, age:45, height:182};
 let TGT={...TARGET_DEFAULT};
 async function loadTargets(){
   const s=await get1('settings','targets');
   TGT={...TARGET_DEFAULT,...((s&&s.value)||{})};
+  /* v11.5: protein target 185 -> 165 g (1.9 g/kg of goal weight). A stored 185 is the old default, moved once. */
+  if(s&&s.value&&s.value.prot===185&&!s.value.p165){TGT.prot=165;TGT.p165=true;await put('settings',{key:'targets',value:TGT})}
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
   set('tKcal',TGT.kcal);set('tProt',TGT.prot);set('tFast',TGT.fastH);set('tGoalW',TGT.goalW);set('tAge',TGT.age);set('tHeight',TGT.height);
   const l=document.getElementById('fastTgtLbl');if(l)l.textContent=TGT.fastH;
@@ -1848,44 +1873,48 @@ const ING={
   oil:      {n:'Extra-virgin olive oil',kc:884,p:0,   c:0,  f:100, a:'Pantry'},
   acv:      {n:'Apple cider vinegar',   kc:22, p:0,   c:0.9,f:0,   a:'Pantry'}
 };
+/* v11.5: not on the allowed list (dairy foods, chickpeas, beans, sugar). The keys stay so that
+   older log entries still resolve; they are not offered when adding to a meal. */
+const OFF_LIST=new Set(['yog','parm','skyr','cottage','milk','cheese','chickpea','beans','honeyno','bread']);
 /* ing = [key, amount per ONE portion] (g, or pieces for u:'pcs'). Batch meals are cooked ×2. */
 const MEALS=[
-  {code:'SHK', kind:'shake', name:'Morning shake', when:'Mon–Fri, after the 16 h',
-   ing:[['whey',30],['banana',120],['creatine',5],['psyllium',10]],
-   steps:['Shake whey + 300 ml water, add creatine and psyllium, drink at once (psyllium thickens).','Banana on the side or blended.']},
-  {code:'SHKN',kind:'shake', name:'Morning shake + nuts', when:'Half banana + 15 g walnuts / almonds',
-   ing:[['whey',30],['banana',60],['creatine',5],['psyllium',10],['walnut',15]],
-   steps:['As SHK, but half a banana and 15 g nuts — keeps the day on target.']},
-  {code:'OML', kind:'eggs',  name:'Weekend omelette', when:'Sat / Sun first meal',
-   ing:[['egg',2],['eggwhite',150],['spinach',80],['tomato',100],['pepper',80],['oil',2],['psyllium',10]],
-   steps:['Sauté the vegetables in the oil 3 min (non-stick pan).','Add eggs + whites, salt, pepper; cook on low until just set.','Psyllium in a glass of water alongside (weekend fibre). No bread.']},
-  /* v11.4 batches — every morning item × every batch audited to 2,050–2,250 kcal / 180–215 g P. Chickpeas removed. */
+  /* v11.5 — no dairy foods (whey isolate stays), smaller batch portions, bigger breakfast.
+     Every morning item + 2 portions of any batch is audited to 2,050–2,250 kcal and 155–185 g protein. */
+  {code:'SHK', kind:'shake', name:'Morning shake (blender)', when:'Mon–Fri, after the 16 h',
+   ing:[['whey',40],['oats',60],['banana',120],['walnut',15],['psyllium',10],['creatine',5]],
+   steps:['Blender: 400 ml water, oats first (10 s), then whey, banana, walnuts, creatine.','Psyllium last, blend 5 s and drink at once — it thickens.']},
+  {code:'OML', kind:'eggs',  name:'Weekend omelette + rye + berries', when:'Sat / Sun first meal — same daily rules as weekdays',
+   ing:[['egg',2],['eggwhite',200],['spinach',80],['tomato',100],['pepper',80],['oil',5],['rye',2],['berries',100],['psyllium',10]],
+   steps:['Sauté the vegetables in the oil 3 min (non-stick pan).','Add eggs + whites, salt, pepper; cook on low until just set.','Two slices of whole rye bread, berries on the side. Psyllium in a glass of water.']},
   {code:'M1',  kind:'batch', name:'Chicken · brown rice · green beans', when:'Core batch',
-   ing:[['chicken',220],['rice',90],['gbeans',300],['oil',15],['lemon',0.5],['garlic',2]],
+   ing:[['chicken',180],['rice',85],['gbeans',200],['oil',12],['lemon',0.5],['garlic',2]],
    steps:['Rice: rinse, 1 : 2 water, lid on, 35 min.','Chicken: salt, pepper, paprika; dry pan or oven 200 °C 20–25 min.','Green beans: steam or boil 6–8 min (broccoli instead if it sits well); dress with the oil, lemon, crushed garlic.','Split into 2 boxes: lunch and dinner.']},
-  {code:'M2',  kind:'batch', name:'Trout (or salmon) · potatoes · yogurt-dill sauce · salad', when:'2× / week — omega-3',
-   ing:[['trout',240],['yog',250],['potato',350],['lettuce',100],['tomato',100],['cucumber',100],['oil',10],['acv',10]],
-   steps:['Potatoes: boil in skin 20 min, cool in the fridge (resistant starch).','Trout: oven 200 °C 12–15 min, lemon. Salmon: same, then log 200 g salmon as a Various swap or accept +50 kcal.','Sauce: yogurt + dill + garlic + salt, split in two pots.','Salad dressed with the oil + vinegar; keep dressing separate for the dinner box.']},
+  {code:'M2',  kind:'batch', name:'Trout (or salmon) · potatoes · salad', when:'2× / week — omega-3',
+   ing:[['trout',230],['potato',400],['lettuce',60],['tomato',100],['cucumber',100],['oil',12],['acv',10]],
+   steps:['Potatoes: boil in skin 20 min, cool in the fridge (resistant starch).','Trout: oven 200 °C 12–15 min, lemon, dill. With salmon use 190 g.','Salad dressed with the oil + vinegar; keep dressing separate for the dinner box.']},
   {code:'M3',  kind:'batch', name:'Turkey · bulgur · roasted vegetables', when:'Core batch — fibre',
-   ing:[['turkey',230],['bulgur',90],['zucchini',150],['pepper',150],['onion',50],['oil',20],['garlic',2]],
+   ing:[['turkey',180],['bulgur',85],['zucchini',150],['pepper',150],['onion',40],['oil',14],['garlic',2]],
    steps:['Bulgur: 1 : 2 boiling water, lid on, off the heat 15 min.','Vegetables in chunks, oil, salt; oven 210 °C 25 min, turkey strips on the same tray for the last 15 min.','Split into 2 boxes.']},
-  {code:'M4',  kind:'batch', name:'Pork tenderloin · sweet potato · yogurt sauce · salad', when:'1–2× / week',
-   ing:[['pork',280],['spotato',300],['yog',200],['tomato',150],['cucumber',150],['onion',30],['oil',18],['lemon',0.5]],
-   steps:['Sweet potato in wedges, 8 g of the oil, oven 210 °C 30 min.','Tenderloin in 2 cm medallions, hot pan 2–3 min a side, rest 5 min.','Yogurt + lemon + garlic + salt as sauce; salad with the rest of the oil.','Lean beef (220 g) may replace the pork once a week — heme iron.']},
-  {code:'M5',  kind:'batch', name:'Cod · sweet potato · spinach · yogurt-lemon', when:'Lightest batch',
-   ing:[['cod',330],['spotato',330],['spinach',200],['yog',150],['oil',24],['garlic',2],['lemon',0.5]],
-   steps:['Sweet potato in wedges, 10 g of the oil, oven 210 °C 30 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil.','Yogurt + lemon zest as sauce.']},
-  {code:'M6',  kind:'batch', name:'Tuna · quinoa · tomato-cucumber · olives (no cooking)', when:'Fallback — 10 minutes',
-   ing:[['tuna',250],['quinoa',100],['tomato',150],['cucumber',150],['olive',40],['oil',18],['lemon',0.5]],
-   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min (cook 2–3 days ahead, keeps in the fridge).','Drain tuna, mix everything, lemon, pepper.','Tuna ≤ 2 days a week (mercury).']},
-  {code:'M7',  kind:'batch', name:'Chicken · whole-wheat pasta · tomato-basil · parmesan', when:'Variety — Mediterranean',
-   ing:[['chicken',220],['wwpasta',90],['tomato',300],['onion',40],['garlic',2],['oil',14],['parm',20]],
-   steps:['Pasta: boil al dente (whole-wheat, 9–10 min).','Onion + garlic in the oil 3 min, tomato chopped or passata 10 min, basil, salt.','Chicken strips in the sauce 8–10 min; toss with the pasta, parmesan on top.']},
-  {code:'M8',  kind:'batch', name:'Frittata · potatoes · peppers · yogurt', when:'Meat-free day — 1× / week',
-   ing:[['egg',3],['eggwhite',300],['potato',300],['pepper',150],['onion',50],['oil',15],['yog',150]],
-   steps:['Potatoes diced, boil 8 min, drain.','Pepper + onion in the oil 5 min, add potatoes, pour eggs + whites, salt; oven 180 °C 20 min or lid on low.','Cut in two; yogurt on the side.']},
-  {code:'VAR', kind:'var',   name:'Various — ingredients + grams', when:'Anything not on the list, eating out, extras', ing:[], steps:[]},
-  {code:'OTH', kind:'other', name:'Estimate only (kcal / protein)', when:'When you cannot weigh anything', ing:[], steps:[]}
+  {code:'M4',  kind:'batch', name:'Pork tenderloin · sweet potato · salad', when:'1–2× / week',
+   ing:[['pork',250],['spotato',320],['tomato',150],['cucumber',100],['onion',30],['oil',17],['lemon',0.5]],
+   steps:['Sweet potato in wedges, 8 g of the oil, oven 210 °C 30 min.','Tenderloin in 2 cm medallions, hot pan 2–3 min a side, rest 5 min.','Salad with the rest of the oil and lemon.','Lean beef (200 g) may replace the pork once a week at most — heme iron.']},
+  {code:'M5',  kind:'batch', name:'Cod · sweet potato · spinach', when:'Lightest batch',
+   ing:[['cod',300],['spotato',330],['spinach',150],['oil',24],['garlic',2],['lemon',0.5]],
+   steps:['Sweet potato in wedges, 10 g of the oil, oven 210 °C 30 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil.']},
+  {code:'M6',  kind:'batch', name:'Tuna · quinoa · tomato-cucumber · olives (no cooking)', when:'Fallback — 10 minutes, max 2 days / week',
+   ing:[['tuna',190],['quinoa',85],['tomato',150],['cucumber',120],['olive',40],['oil',16],['lemon',0.5]],
+   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min (cook 2–3 days ahead, keeps in the fridge).','Drain tuna, mix everything, lemon, pepper.']},
+  {code:'M7',  kind:'batch', name:'Chicken · whole-wheat pasta · tomato-basil', when:'Variety — Mediterranean',
+   ing:[['chicken',170],['wwpasta',90],['tomato',250],['onion',40],['garlic',2],['oil',15]],
+   steps:['Pasta: boil al dente (whole-wheat, 9–10 min).','Onion + garlic in the oil 3 min, tomato chopped or passata 10 min, basil, salt.','Chicken strips in the sauce 8–10 min; toss with the pasta.']},
+  {code:'M8',  kind:'batch', name:'Frittata · potatoes · peppers', when:'Meat-free day — 1× / week',
+   ing:[['egg',2],['eggwhite',300],['potato',350],['pepper',150],['onion',40],['oil',14]],
+   steps:['Potatoes diced, boil 8 min, drain.','Pepper + onion in the oil 5 min, add potatoes, pour eggs + whites, salt; oven 180 °C 20 min or lid on low.','Cut in two.']},
+  {code:'FREE',kind:'free',  name:'Free entry — special occasion', when:'Parties, restaurants, anniversaries: what and roughly how much', ing:[], steps:[]},
+  /* legacy codes — kept so older log entries still show their name; not offered any more */
+  {code:'SHKN',kind:'legacy', name:'Morning shake + nuts (old)', when:'', ing:[], steps:[]},
+  {code:'VAR', kind:'legacy', name:'Various (old)', when:'', ing:[], steps:[]},
+  {code:'OTH', kind:'legacy', name:'Estimate (old)', when:'', ing:[], steps:[]}
 ];
 const MEAL_BY=Object.fromEntries(MEALS.map(m=>[m.code,m]));
 function mealMacros(m,portions=1){
@@ -1911,66 +1940,106 @@ function foodTab(t){
 /* ---- LOG  (store 'meals': {id,date,time,code,portions,comment,kc,p,c,f}) ---- */
 let LOG_CODE=null, MEALS_ALL=[];
 async function loadMeals(){MEALS_ALL=await all('meals')}
+/* v11.5 — the Log records exactly what was eaten.
+   Pick a meal -> one row per ingredient. The planned raw grams sit in the placeholder (grey);
+   the box itself is empty and takes what was actually eaten. A box left empty = not eaten.
+   Extra rows can only be picked from the allowed foods. Off-list food goes to Free entry
+   (what + roughly how much, no macros — estimated when the export is reviewed). */
+const OFFPLAN=new Set(['FREE','OTH','VAR']);
+const LOG_MEALS=MEALS.filter(m=>m.kind!=='legacy');
+const ALLOWED_KEYS=Object.keys(ING).filter(k=>!OFF_LIST.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n));
 function initLogForm(){
   const d=document.getElementById('logDate');if(d&&!d.value)d.value=isoToday();
   const t=document.getElementById('logTime');if(t){const n=new Date();t.value=pad(n.getHours())+':'+pad(n.getMinutes())}
   const ch=document.getElementById('logChips');
-  if(ch)ch.innerHTML=MEALS.map(m=>`<button class="chip ${m.code==='OTH'?'oth':''}" id="chip-${m.code}" onclick="pickCode('${m.code}')"><span class="c">${m.code}</span>${m.name}</button>`).join('');
+  if(ch)ch.innerHTML=LOG_MEALS.map(m=>`<button class="chip ${m.code==='FREE'?'oth':''}" id="chip-${m.code}" onclick="pickCode('${m.code}')"><span class="c">${m.code}</span>${m.name}</button>`).join('');
 }
+function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
 function pickCode(c){
   LOG_CODE=c;
-  MEALS.forEach(m=>document.getElementById('chip-'+m.code).classList.toggle('on',m.code===c));
-  document.getElementById('othBox').classList.toggle('hidden',c!=='OTH');
-  document.getElementById('varBox').classList.toggle('hidden',c!=='VAR');
-  if(c==='VAR'&&!document.querySelectorAll('#varLines .vline').length)varAddLine();
+  LOG_MEALS.forEach(m=>{const e=document.getElementById('chip-'+m.code);if(e)e.classList.toggle('on',m.code===c)});
+  const box=document.getElementById('mealBox'), rows=document.getElementById('mealRows');
+  box.classList.remove('hidden');rows.innerHTML='';
+  const m=MEAL_BY[c], free=c==='FREE';
+  document.getElementById('mealFillBtn').classList.toggle('hidden',free);
+  document.getElementById('mealAddBtn').textContent=free?'+ item':'+ ingredient';
+  if(free){mealAddRow();mealAddRow()}
+  else m.ing.forEach(([k,q])=>{
+    const d=document.createElement('div');d.className='mrow';d.dataset.k=k;d.dataset.plan=q;
+    d.innerHTML=`<div class="nm">${ING[k].n}</div>
+      <input type="text" inputmode="decimal" class="q" placeholder="${q}" oninput="mealTotals()">
+      <span class="u">${unitOf(k)}</span>`;
+    rows.appendChild(d);
+  });
+  mealTotals();
 }
-/* v11.4 — Various: ingredient (from ING) + raw grams per line; macros from the food table */
-const ING_SORTED=Object.keys(ING).sort((a,b)=>ING[a].n.localeCompare(ING[b].n));
-function varAddLine(){
-  const el=document.getElementById('varLines');
-  const d=document.createElement('div');d.className='vline';d.style.cssText='display:grid;grid-template-columns:1fr 84px 32px;gap:6px;margin-top:6px;align-items:center';
-  d.innerHTML=`<select class="vk" onchange="varTotals()"><option value="">— ingredient —</option>${ING_SORTED.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pcs)':''}</option>`).join('')}</select>
-    <input type="text" inputmode="decimal" class="vq" placeholder="g" oninput="varTotals()">
-    <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove();varTotals()">✕</button>`;
-  el.appendChild(d);
+function mealAddRow(){
+  const rows=document.getElementById('mealRows'), d=document.createElement('div');d.className='mrow';
+  if(LOG_CODE==='FREE'){
+    d.dataset.free='1';
+    d.innerHTML=`<input type="text" class="ft" placeholder="what (e.g. pizza, cake)">
+      <input type="text" inputmode="decimal" class="q" placeholder="g">
+      <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove()">✕</button>`;
+  }else{
+    d.dataset.extra='1';
+    d.innerHTML=`<select class="vk" onchange="mealTotals()"><option value="">— allowed food —</option>${ALLOWED_KEYS.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pcs)':''}</option>`).join('')}</select>
+      <input type="text" inputmode="decimal" class="q" placeholder="g" oninput="mealTotals()">
+      <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove();mealTotals()">✕</button>`;
+  }
+  rows.appendChild(d);
 }
-function varItems(){
-  return [...document.querySelectorAll('#varLines .vline')].map(l=>({k:l.querySelector('.vk').value,q:numVal(boxVal(l.querySelector('.vq')))})).filter(x=>x.k&&x.q>0);
+function mealFillPlanned(){
+  document.querySelectorAll('#mealRows .mrow').forEach(r=>{if(r.dataset.plan!=null){const i=r.querySelector('.q');if(i.value.trim()==='')i.value=r.dataset.plan}});
+  mealTotals();
 }
-function varMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
-function varTotals(){
-  const it=varItems(),m=varMacros(it);
-  const el=document.getElementById('varTot');if(el)el.textContent=it.length?`${m.kc} kcal · ${m.p} g P · ${m.c} g C · ${m.f} g F`:'';
+/* reads only typed values — a placeholder is never a value */
+function mealRead(){
+  const items=[],blank=[],free=[];
+  document.querySelectorAll('#mealRows .mrow').forEach(r=>{
+    const raw=r.querySelector('.q').value.trim(), q=raw===''?null:numVal(raw);
+    if(r.dataset.free){const t=r.querySelector('.ft').value.trim();if(t)free.push({t,q:q>0?q:null});return}
+    const k=r.dataset.k||(r.querySelector('.vk')?r.querySelector('.vk').value:'');
+    if(!k)return;
+    if(q==null||!(q>0)){if(r.dataset.k&&raw==='')blank.push(ING[k].n);return}
+    items.push({k,q});
+  });
+  return {items,blank,free};
+}
+function itemsMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
+function mealTotals(){
+  const el=document.getElementById('mealTot');if(!el)return;
+  if(LOG_CODE==='FREE'){el.textContent='Not counted in the day totals — estimated when you send the export.';return}
+  const {items}=mealRead(), m=itemsMacros(items), plan=MEAL_BY[LOG_CODE]?mealMacros(MEAL_BY[LOG_CODE],1):null;
+  el.innerHTML=(items.length?`Eaten: <b style="color:var(--green)">${m.kc} kcal · ${m.p} g P</b> · ${m.c} g C · ${m.f} g F`:'Nothing typed yet')+(plan?` <span style="opacity:.7">· plan ${plan.kc} kcal · ${plan.p} g P</span>`:'');
 }
 async function saveMeal(){
-  if(!LOG_CODE){toast('Pick a preset');return}
+  if(!LOG_CODE){toast('Pick a meal');return}
   const date=document.getElementById('logDate').value||isoToday();
   const time=document.getElementById('logTime').value||'';
-  const portions=1;
   const comment=document.getElementById('logCm').value.trim();
-  let mac;
-  let items=null;
-  if(LOG_CODE==='OTH'){
-    mac={kc:Math.round(numVal(rv('othK'))||0),p:Math.round(numVal(rv('othP'))||0),c:null,f:null};
-    if(!mac.kc&&!comment){toast('Add an estimate or a comment');return}
-  }else if(LOG_CODE==='VAR'){
-    items=varItems();
-    if(!items.length){toast('Add at least one ingredient with grams');return}
-    mac=varMacros(items);
-  }else mac=mealMacros(MEAL_BY[LOG_CODE],portions);
-  await put('meals',{date,time,code:LOG_CODE,portions,comment,...mac,items:items||undefined,ts:Date.now()});
+  const {items,blank,free}=mealRead();
+  let rec;
+  if(LOG_CODE==='FREE'){
+    if(!free.length){toast('Write what you ate');return}
+    rec={date,time,code:'FREE',portions:1,comment,kc:0,p:0,c:0,f:0,free,ts:Date.now()};
+  }else{
+    if(!items.length){toast('Type the grams you ate');return}
+    if(blank.length&&!confirm('Left empty = not eaten:\n\n'+blank.join('\n')+'\n\nSave like this?'))return;
+    rec={date,time,code:LOG_CODE,portions:1,comment,...itemsMacros(items),items,ts:Date.now()};
+  }
+  await put('meals',rec);
   // a meal eaten today ends a running fast
   if(FAST_ACTIVE&&date===isoToday()){
     const [hh,mm]=(time||'00:00').split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);
     const endTs=Math.max(FAST_ACTIVE.start+60000,Math.min(Date.now(),d.getTime()));
     await endFast(endTs);
   }
-  document.getElementById('logCm').value='';document.getElementById('othK').value='';document.getElementById('othP').value='';
-  LOG_CODE=null;MEALS.forEach(m=>document.getElementById('chip-'+m.code).classList.remove('on'));
-  document.getElementById('othBox').classList.add('hidden');
-  document.getElementById('varBox').classList.add('hidden');document.getElementById('varLines').innerHTML='';varTotals();
+  document.getElementById('logCm').value='';
+  LOG_CODE=null;LOG_MEALS.forEach(m=>{const e=document.getElementById('chip-'+m.code);if(e)e.classList.remove('on')});
+  document.getElementById('mealBox').classList.add('hidden');document.getElementById('mealRows').innerHTML='';
   await loadMeals();renderLog();toast('Meal saved');
 }
+
 async function deleteMeal(id){
   if(!confirm('Delete this meal?'))return;
   await new Promise((res,rej)=>{const q=tx('meals','readwrite').delete(id);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});
@@ -1980,8 +2049,8 @@ function dayTotals(date){
   const ms=MEALS_ALL.filter(m=>m.date===date);
   const sum=k=>ms.reduce((a,m)=>a+(m[k]||0),0);
   return {kc:sum('kc'),p:sum('p'),c:sum('c'),f:sum('f'),n:ms.length,
-    clean:ms.length>0&&ms.every(m=>m.code!=='OTH'&&m.code!=='VAR'&&!m.comment),oth:ms.filter(m=>m.code==='OTH'||m.code==='VAR').length,
-    est:ms.some(m=>m.code==='OTH')};
+    clean:ms.length>0&&ms.every(m=>!OFFPLAN.has(m.code)),oth:ms.filter(m=>OFFPLAN.has(m.code)).length,
+    est:ms.some(m=>m.code==='OTH'||m.code==='FREE')};
 }
 function totBox(n,v,tgt,unit,lowIsGood){
   const over=tgt&&v>tgt*1.05, under=tgt&&v<tgt*0.9;
@@ -1995,14 +2064,15 @@ function renderLog(){
   const kk=(n,v,sub,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v}<span style="font-size:.7rem;color:var(--muted)"> ${sub}</span></div></div>`;
   const kcCls=t.kc?(t.kc>TGT.kcal*1.05?'bad':t.kc<TGT.kcal*0.9?'warn':'ok'):'', pCls=t.p?(t.p>=TGT.prot?'ok':'warn'):'';
   document.getElementById('dayTot').innerHTML=kk('kcal',t.kc,'/ '+TGT.kcal,kcCls)+kk('Protein',t.p,'/ '+TGT.prot+' g',pCls)+
-    kk('Carbs',t.c,'g'+(t.est?' (est. day)':''),'')+kk('Fat',t.f,'g'+(t.f&&t.f<45?' · < 45':''),t.f&&t.f<45&&t.n>=3?'warn':'');
+    kk('Carbs',t.c,'g'+(t.est?' · free entry not counted':''),'')+kk('Fat',t.f,'g'+(t.f&&t.f<45?' · < 45':''),t.f&&t.f<45&&t.n>=3?'warn':'');
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   document.getElementById('dayMeals').innerHTML=ms.length?ms.map(m=>`<div class="ml">
       <div class="code">${m.code}</div>
       <div style="flex:1"><div class="nm">${MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
         ${m.items&&m.items.length?`<div class="cm">${m.items.map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(ING[x.k]&&ING[x.k].u==='pcs'?' pcs':' g')).join(' · ')}</div>`:''}
+        ${m.free&&m.free.length?`<div class="cm">${m.free.map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · ')}</div>`:''}
         ${m.comment?`<div class="cm">${esc(m.comment)}</div>`:''}</div>
-      <div class="mac"><b>${m.p||0}P</b><br>${m.kc||0} kcal</div>
+      <div class="mac">${m.code==='FREE'?'<span class="muted">not<br>counted</span>':`<b>${m.p||0}P</b><br>${m.kc||0} kcal`}</div>
       <button class="x" onclick="deleteMeal(${m.id})">✕</button></div>`).join('')
     :'<div class="muted">Nothing logged for this day.</div>';
   // history 14 days
@@ -2011,7 +2081,7 @@ function renderLog(){
     const codes=MEALS_ALL.filter(m=>m.date===d).map(m=>m.code).join(' · ');
     const kcCls=x.kc>TGT.kcal*1.05?'bad':'ok', pCls=x.p>=TGT.prot?'ok':'warn';
     return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();window.scrollTo(0,0)">
-      <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">various ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
+      <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">off-plan ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
       <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} P · ${x.c} C · ${x.f} F</div></div></div>`}).join('');
   document.getElementById('logHist').innerHTML=hist||'<div class="muted">No meals logged yet.</div>';
 }
@@ -2020,7 +2090,7 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 /* ---- MEALS: everything visible, raw weights for one day (2 portions for M1–M6) ---- */
 function renderMeals(){
   const el=document.getElementById('mealCards');if(!el)return;
-  el.innerHTML=MEALS.filter(m=>m.kind!=='other'&&m.kind!=='var').map(m=>{
+  el.innerHTML=MEALS.filter(m=>m.ing.length).map(m=>{
     const n=m.kind==='batch'?2:1, mac=mealMacros(m,1);
     return `<div class="card">
       <h3><span style="color:var(--txt)">${m.code}</span> &nbsp;${m.name}</h3>
@@ -2076,14 +2146,14 @@ const LAB_DEFS=[
   ['ast',    'AST (TGO)',         'U/L',  '< 40',                          v=>v<=35?'ok':v<=40?'warn':'bad'],
   ['ggt',    'GGT',               'U/L',  '< 55 (optimal < 40)',           v=>v<=40?'ok':v<=55?'warn':'bad'],
   ['tg',     'Triglycerides',     'mg/dL','< 150 (optimal < 100)',         v=>v<100?'ok':v<150?'warn':'bad'],
-  ['ldl',    'LDL-C',             'mg/dL','< 100 (on statin: < 70)',       v=>v<70?'ok':v<100?'warn':'bad'],
+  ['ldl',    'LDL-C',             'mg/dL','< 100 generic · yours: per internist',       v=>v<70?'ok':v<100?'warn':'bad'],
   ['hdl',    'HDL-C',             'mg/dL','> 40',                          v=>v>=40?'ok':'bad'],
   ['apob',   'ApoB',              'mg/dL','< 90 (optimal < 80)',           v=>v<80?'ok':v<90?'warn':'bad'],
   ['tc',     'Total cholesterol', 'mg/dL','< 200',                         v=>v<200?'ok':v<240?'warn':'bad'],
   ['hba1c',  'HbA1c',             '%',    '< 5.7',                         v=>v<5.7?'ok':v<6.5?'warn':'bad'],
   ['glu',    'Fasting glucose',   'mg/dL','< 100',                         v=>v<100?'ok':v<126?'warn':'bad'],
   ['ins',    'Fasting insulin',   'µIU/mL','< 10 (HOMA-IR < 2)',           v=>v<10?'ok':v<15?'warn':'bad'],
-  ['crp',    'hs-CRP',            'mg/L', '< 1',                           v=>v<1?'ok':v<3?'warn':'bad'],
+  ['crp',    'hs-CRP (as the lab prints it)','mg/dL','< 0.1 optimal · 0.3 high (×10 = mg/L)', v=>v<0.1?'ok':v<0.3?'warn':'bad'],
   ['ferr',   'Ferritin',          'ng/mL','30 – 300',                      v=>v>=30&&v<=300?'ok':'warn'],
   /* v11.3 */
   ['fe',     'Serum iron',        'µg/dL','65 – 175',                      v=>v>=65&&v<=175?'ok':'warn'],

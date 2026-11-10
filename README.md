@@ -20,6 +20,19 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 ---
 
+## v11.5 (10 Nov 2026)
+
+- **Food → Log records what was eaten.** Pick a meal; every ingredient gets a row with the planned raw grams in grey. The box is empty until you type; an empty box means not eaten (confirmed on save). "+ ingredient" offers only allowed foods; "Fill planned" copies the plan when you ate exactly that. Macros are computed from the typed grams.
+- **Free entry** replaces Various/Estimate: free text + grams for parties and restaurants. Stored as text, not counted in the day totals, shown as off-plan.
+- **Meal set rebuilt**: no dairy foods (whey isolate stays), smaller batch portions, oat-banana blender shake, weekend omelette with rye and berries. Every morning item + two portions of any batch = 2,140–2,240 kcal and 159–183 g protein.
+- **Protein target 165 g** (stored 185 is migrated once).
+- **Session B**: overhead triceps removed; rests on RDL, overhead press and incline DB press 120 s. Weekly triceps target 4 sets.
+- **Stats**: 7-day mean weight, 4-week rate, waist change come first; scale body composition moved to a muted trend-only line.
+- **Zone 2** weekly target 120 min (3 × 40).
+- Food list: beef, sardines and mackerel capped at once a week; dairy foods, chickpeas and beans moved to the avoid list.
+- hs-CRP is entered in mg/dL, as the lab prints it.
+- Fixed escape codes that were displayed literally in some static texts.
+
 ## v11.4.2 (10 Nov 2026)
 
 Bug fix: **Edit start** on a running fast could not be used — the card was rebuilt every second (since the seconds display of v11.3), which destroyed the date-time input and closed the picker. The controls are now built once and only the live block (timer, bar, estimate) is repainted.
@@ -118,7 +131,7 @@ Settings → toggle. Sessions run at −40 % sets, same weights, RIR 3–4. Ever
 
 Calibrated 22 Aug 2026 (RHR ≈ 67, HRmax estimated 177, Tanaka — not measured directly).
 
-**Working target: 118–133 bpm, hard cap 135.** Treadmill 6–6.5 km/h at 6–10 % incline, adjusting incline to hold 125–132; talk test = full sentences. 3 × 40 min on non-lifting days (Tue / Thu / Sat / Sun), progressing toward 150 min/week. Never after lifting.
+**Working target: 118–133 bpm, hard cap 135.** Treadmill 6–6.5 km/h at 6–10 % incline, adjusting incline to hold 125–132; talk test = full sentences. 3 × 40 min on non-lifting days (Tue / Thu / Sat) = 120 min/week; 50 min sessions later. Never after lifting.
 
 Logged as `type:'cardio'` workouts with duration and avg/max HR entered manually; the weekly total shows on the Gym tab and in Stats.
 
