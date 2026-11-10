@@ -247,7 +247,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4.1 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4.2 · gym · fast · food</div>
   </header>
 
   <main>
@@ -783,7 +783,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-10-v11.4.1';
+const BUILD='2026-11-10-v11.4.2';
 
 /* ============================================================
    State
@@ -1685,21 +1685,31 @@ function renderFast(){
     if(FAST_ACTIVE){
       const el=now-FAST_ACTIVE.start, tgt=(FAST_ACTIVE.target||TGT.fastH)*H, pct=Math.min(100,el/tgt*100);
       const done=el>=tgt, est=fastEstimate(el), left=tgt-el;
-      c.innerHTML=`<div class="fastBox on">
+      const live=`<div class="fastBox on">
         <div class="st">${done?'Target reached \u2014 eat when ready':'Fasting'}</div>
         <div class="big">${fmtHMS(el)}</div>
         <div class="sub2">since ${fmtDT(FAST_ACTIVE.start)} \u00B7 target ${FAST_ACTIVE.target||TGT.fastH} h at ${fmtDT(FAST_ACTIVE.start+tgt).slice(6)}${done?'':' \u00B7 '+fmtHM(left)+' to go'}</div>
         <div class="bar ${done?'':'blue'}"><i style="width:${pct.toFixed(1)}%"></i></div>
         <div class="est">~<b>${est.fatG} g</b> fat used as fuel \u00B7 ${est.kcal} kcal at rest, ${Math.round(est.fatKcal/Math.max(1,est.kcal)*100)} % from fat <span class="muted">(est. \u2014 not net loss)</span></div>
-      </div>
+      </div>`;
+      /* v11.4.2: the controls are built once; only #fastLive is repainted each second.
+         Rebuilding the whole card every tick destroyed the datetime input and closed the picker. */
+      let L=document.getElementById('fastLive');
+      if(!L||c.dataset.mode!=='on'){
+        c.dataset.mode='on';
+        c.innerHTML=`<div id="fastLive"></div>
       <button class="btn primary" onclick="endFast()">&#9632;&nbsp; End fast (eat)</button>
       <div style="margin-top:10px"><label>Edit start</label>
         <div class="row"><input type="datetime-local" id="fastStartEdit" value="${toLocalInput(FAST_ACTIVE.start)}">
         <button class="btn" style="width:auto" onclick="saveActiveStart()">Save</button></div></div>`;
+        L=document.getElementById('fastLive');
+      }
+      L.innerHTML=live;
     }else{
       const last=FAST_HIST.find(x=>x.end!=null);
       const dur=last?last.end-last.start:null, est=last?fastEstimate(dur):null;
       const ok=last&&dur>=(last.target||TGT.fastH)*H;
+      c.dataset.mode='off';
       c.innerHTML=`<div class="fastBox off">
         <div class="st">Last fast${last?(ok?' \u00B7 target met':' \u00B7 short of target'):''}</div>
         <div class="big" style="color:${ok?'var(--green)':'#4aa3ff'}">${dur!=null?fmtHMS(dur):'\u2014'}</div>
@@ -1712,13 +1722,13 @@ function renderFast(){
   };
   getBody().then(b=>{const lw=[...b].reverse().find(x=>x.weight!=null);FAST_W=lw?lw.weight:null;paint()});
   paint();
-  fastTimer=setInterval(paint,1000);
+  if(FAST_ACTIVE)fastTimer=setInterval(paint,1000);
   renderFastKpi();renderFastHist();
 }
 async function saveActiveStart(){
   const t=fromLocalInput(document.getElementById('fastStartEdit').value);
   if(!t||t>Date.now()){toast('Invalid start');return}
-  FAST_ACTIVE.start=t;await put('fasts',FAST_ACTIVE);await loadFasts();renderFast();toast('Start updated');
+  FAST_ACTIVE.start=t;await put('fasts',FAST_ACTIVE);await loadFasts();document.getElementById('fastCard').dataset.mode='';renderFast();toast('Start updated');
 }
 /* v11.3 dashboard: what matters for the goal is consistency (every evening), length
    (>= target), and the fuel mix — not the eating window. */

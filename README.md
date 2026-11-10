@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-10-v11.4.1`
+**Build:** `2026-11-10-v11.4.2`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -17,6 +17,12 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Food** | **Log** a meal by tapping its code (+ optional comment) · **Meals** raw weights for one day of each preset · **Shop** tap the meals you'll buy for, get the aggregated raw-weight list · **List** approved foods |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
+
+---
+
+## v11.4.2 (10 Nov 2026)
+
+Bug fix: **Edit start** on a running fast could not be used — the card was rebuilt every second (since the seconds display of v11.3), which destroyed the date-time input and closed the picker. The controls are now built once and only the live block (timer, bar, estimate) is repainted.
 
 ---
 
@@ -162,7 +168,7 @@ Import merges rather than overwrites: workouts are de-duplicated on `date|sessio
 
 Copy `index.html`, `favicon.ico` and `apple-touch-icon.png` to the repo root on `main`. GitHub Pages publishes in 1–2 minutes.
 
-The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-10-v11.4.1` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
+The page sends `no-cache` headers, but iOS sometimes keeps the old version in memory: close the PWA from the app switcher and reopen. Confirm `2026-11-10-v11.4.2` in **Settings → Database contents**. If the home-screen icon does not change, remove the shortcut and add it again — iOS caches the icon at install time.
 
 ---
 
