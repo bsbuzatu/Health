@@ -247,7 +247,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.4.1 · gym · fast · food</div>
   </header>
 
   <main>
@@ -783,7 +783,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-09-v11.4';
+const BUILD='2026-11-10-v11.4.1';
 
 /* ============================================================
    State
@@ -1690,7 +1690,7 @@ function renderFast(){
         <div class="big">${fmtHMS(el)}</div>
         <div class="sub2">since ${fmtDT(FAST_ACTIVE.start)} \u00B7 target ${FAST_ACTIVE.target||TGT.fastH} h at ${fmtDT(FAST_ACTIVE.start+tgt).slice(6)}${done?'':' \u00B7 '+fmtHM(left)+' to go'}</div>
         <div class="bar ${done?'':'blue'}"><i style="width:${pct.toFixed(1)}%"></i></div>
-        <div class="est">~<b>${est.fatG} g</b> fat oxidised \u00B7 ${est.kcal} kcal at rest, ${Math.round(est.fatKcal/Math.max(1,est.kcal)*100)} % from fat <span class="muted">(estimate)</span></div>
+        <div class="est">~<b>${est.fatG} g</b> fat used as fuel \u00B7 ${est.kcal} kcal at rest, ${Math.round(est.fatKcal/Math.max(1,est.kcal)*100)} % from fat <span class="muted">(est. \u2014 not net loss)</span></div>
       </div>
       <button class="btn primary" onclick="endFast()">&#9632;&nbsp; End fast (eat)</button>
       <div style="margin-top:10px"><label>Edit start</label>
@@ -1704,7 +1704,7 @@ function renderFast(){
         <div class="st">Last fast${last?(ok?' \u00B7 target met':' \u00B7 short of target'):''}</div>
         <div class="big" style="color:${ok?'var(--green)':'#4aa3ff'}">${dur!=null?fmtHMS(dur):'\u2014'}</div>
         <div class="sub2">${last?fmtDT(last.start)+' \u2192 '+fmtDT(last.end):'no fasts logged yet \u2014 start one after dinner'}</div>
-        ${est?`<div class="est">~<b>${est.fatG} g</b> fat oxidised \u00B7 ${est.kcal} kcal at rest <span class="muted">(estimate)</span></div>`:''}
+        ${est?`<div class="est">~<b>${est.fatG} g</b> fat used as fuel \u00B7 ${est.kcal} kcal at rest <span class="muted">(est. \u2014 not net loss)</span></div>`:''}
       </div>
       <button class="btn primary" onclick="startFast()">&#9654;&nbsp; Start fast</button>
       <div class="muted" style="margin-top:8px;text-align:center;font-size:.8rem">After the early dinner. Start now, or fix the time afterwards in History.</div>`;
@@ -1740,7 +1740,7 @@ function renderFastKpi(){
     k('\u2265 '+TGT.fastH+' h',hit,'/ '+all7.length)+
     k('Streak at target',streak,'fasts')+
     k('Hours fasted, 7 d',Math.round(sum7),'/ '+TGT.fastH*7)+
-    k('Fat oxidised, 7 d (est.)',fat7?Math.round(fat7):null,'g')+
+    k('Fat used as fuel, 7 d (est.)',fat7?Math.round(fat7):null,'g')+
     k('Longest, 30 d',longest!=null?longest.toFixed(1):null,'h')+
     k('Target',TGT.fastH,'h');
 }
