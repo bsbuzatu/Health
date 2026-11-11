@@ -20,6 +20,14 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 ---
 
+## v11.7 (11 Nov 2026)
+
+Food → Log is now food by food; presets are no longer used for logging (Meals stays as the cooking page).
+- Each row is a food from the allowed list plus the raw amount (grams, or pieces for eggs, garlic, lemon, rye slices). Completing a row opens the next one. The last dropdown option turns a row into a free entry (text + rough grams, not counted).
+- Day light after every save, on the day's running total against the calorie target: GREEN up to target + 100, WARN up to target + 200, RED above. A protein line and the 1,900 kcal floor are shown next to it; a day with a free entry shows OFF-PLAN.
+- New entries are stored with `code:'LOG'`, `items:[{k,q}]` and optional `free:[{t,q}]`. Entries logged earlier with preset codes are unchanged.
+- Fix: the kcal / protein tiles now actually turn amber or red.
+
 ## v11.6.1 (11 Nov 2026)
 
 Running session is now saved as a draft (`settings` → `draft`): confirmed sets, typed values, notes and the rest timer survive a reload, a crash or iOS closing the app, and the session resumes on the next open. Cleared on Finish and Cancel; not included in exports.

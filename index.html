@@ -83,9 +83,20 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .mrow{display:grid;grid-template-columns:1fr 92px 34px;gap:6px;margin-top:6px;align-items:center}
 .mrow .nm{font-size:.92rem}
 .mrow input,.mrow select{padding:9px 8px}
+.mrow select,.mrow .ft{min-width:0;width:100%}
 .mrow input.q{text-align:right}
 .mrow input.q::placeholder{color:#5f6f5c;font-weight:500}
 .mrow .u{color:var(--muted);font-size:.8rem}
+.mrow .x{background:none;border:0;color:var(--muted);font-size:1.1rem;padding:6px}
+/* v11.7: day light */
+.light{border-radius:14px;padding:12px 14px;margin-bottom:10px;border:1px solid var(--line);background:var(--panel2)}
+.light .t{font-size:1.25rem;font-weight:800;letter-spacing:.06em}
+.light .s{font-size:.9rem;margin-top:3px;color:var(--txt)}
+.light .s.w{color:var(--amber)}
+.light.g{border-color:var(--green-dim)}.light.g .t{color:var(--green)}
+.light.w{border-color:#6b4a0c;background:#1a1405}.light.w .t{color:var(--amber)}
+.light.r{border-color:#6b1f1f;background:#1a0808}.light.r .t{color:var(--red)}
+.light.o .t{color:var(--muted)}
 .trend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 /* v11.3: last session's values live ONLY in the placeholder */
 .setrow input.last::placeholder{color:#8fb989;font-weight:700}
@@ -248,6 +259,7 @@ textarea:focus{outline:none;border-color:var(--green)}
 .lab .v{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.lab .v small{display:block;color:var(--muted);font-weight:500;font-size:.68rem}
 .lab .t{text-align:right;color:var(--muted);font-size:.78rem}
 .ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.kpi .k .v.warn,.kpi .v.warn{color:var(--amber)}.kpi .k .v.bad,.kpi .v.bad{color:var(--red)}   /* v11.7: the tile colour was overridden by .kpi .v */
 nav button{font-size:.62rem}
 </style>
 </head>
@@ -260,7 +272,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.6.1 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.7 · gym · fast · food</div>
   </header>
 
   <main>
@@ -425,25 +437,19 @@ nav button{font-size:.62rem}
             <h3 style="margin:0">Today</h3>
             <input type="date" id="logDate" style="width:auto;padding:7px 9px;font-size:.9rem" onchange="renderLog()">
           </div>
+          <div id="dayLight"></div>
           <div class="kpi" id="dayTot"></div>
           <div id="dayMeals" style="margin-top:10px"></div>
         </div>
         <div class="card">
-          <h3>Add meal</h3>
-          <div class="muted" style="margin-bottom:8px">Pick the meal, then type the raw grams you actually ate. Grey numbers are the plan; a box left empty counts as not eaten.</div>
-          <div class="chips" id="logChips"></div>
-          <div style="margin-top:10px"><label>Time</label><input type="time" id="logTime"></div>
-          <div id="mealBox" class="hidden" style="margin-top:10px">
-            <div id="mealRows"></div>
-            <div class="row" style="gap:8px;margin-top:8px">
-              <button class="btn ghost" style="flex:1" id="mealAddBtn" onclick="mealAddRow()">+ ingredient</button>
-              <button class="btn ghost" style="flex:1" id="mealFillBtn" onclick="mealFillPlanned()">Fill planned</button>
-            </div>
-            <div class="muted" style="margin-top:8px" id="mealTot"></div>
-          </div>
+          <h3>Add what you ate</h3>
+          <div class="muted" style="margin-bottom:8px">Two entries a day: the morning shake or omelette, then everything that went into the pan for both meals. Pick a food, type the <b>raw</b> amount, and the next row opens by itself.</div>
+          <div><label>Time</label><input type="time" id="logTime"></div>
+          <div id="mealRows" style="margin-top:10px"></div>
+          <div class="muted" style="margin-top:10px" id="mealTot"></div>
           <label style="margin-top:10px">Comment</label>
           <textarea id="logCm" placeholder="optional"></textarea>
-          <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save meal</button>
+          <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save</button>
         </div>
         <div class="card">
           <h3>Last 14 days</h3>
@@ -841,7 +847,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-11-v11.6.1';
+const BUILD='2026-11-11-v11.7';
 
 /* ============================================================
    State
@@ -2082,69 +2088,69 @@ function foodTab(t){
 }
 
 /* ---- LOG  (store 'meals': {id,date,time,code,portions,comment,kc,p,c,f}) ---- */
-let LOG_CODE=null, MEALS_ALL=[];
+let MEALS_ALL=[];
 async function loadMeals(){MEALS_ALL=await all('meals')}
-/* v11.5 — the Log records exactly what was eaten.
-   Pick a meal -> one row per ingredient. The planned raw grams sit in the placeholder (grey);
-   the box itself is empty and takes what was actually eaten. A box left empty = not eaten.
-   Extra rows can only be picked from the allowed foods. Off-list food goes to Free entry
-   (what + roughly how much, no macros — estimated when the export is reviewed). */
+/* v11.7 — the Log is food by food, no presets.
+   Two entries a day are expected: the morning shake/omelette, and the whole cook for both meals.
+   Each row: an allowed food (dropdown) + the raw amount (g, or pieces for eggs, garlic, lemon,
+   rye slices). A completed row opens the next one. The last dropdown option turns the row into
+   a free entry (text + rough grams, no macros) for food that is not on the list.
+   Record: {date,time,code:'LOG',portions:1,comment,kc,p,c,f,items:[{k,q}],free:[{t,q}],ts}.
+   Entries saved with the old preset codes keep their code, name and macros. */
 const OFFPLAN=new Set(['FREE','OTH','VAR']);
-const LOG_MEALS=MEALS.filter(m=>m.kind!=='legacy');
+const FOOD_GROUPS=['Meat & fish','Dairy & eggs','Dry goods','Produce','Pantry','Staples'];
 const ALLOWED_KEYS=Object.keys(ING).filter(k=>!OFF_LIST.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n));
+const FOOD_OPTS='<option value="">\u2014 food \u2014</option>'+FOOD_GROUPS.map(g=>{
+    const ks=ALLOWED_KEYS.filter(k=>ING[k].a===g);
+    return ks.length?`<optgroup label="${g.replace('&','&amp;')}">${ks.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pieces)':''}</option>`).join('')}</optgroup>`:''}).join('')+
+  '<optgroup label="Not on the list"><option value="__free">Other food \u2014 free entry</option></optgroup>';
+function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
 function initLogForm(){
   const d=document.getElementById('logDate');if(d&&!d.value)d.value=isoToday();
   const t=document.getElementById('logTime');if(t){const n=new Date();t.value=pad(n.getHours())+':'+pad(n.getMinutes())}
-  const ch=document.getElementById('logChips');
-  if(ch)ch.innerHTML=LOG_MEALS.map(m=>`<button class="chip ${m.code==='FREE'?'oth':''}" id="chip-${m.code}" onclick="pickCode('${m.code}')"><span class="c">${m.code}</span>${m.name}</button>`).join('');
+  const rows=document.getElementById('mealRows');if(rows){rows.innerHTML='';logAddRow();mealTotals()}
 }
-function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
-function pickCode(c){
-  LOG_CODE=c;
-  LOG_MEALS.forEach(m=>{const e=document.getElementById('chip-'+m.code);if(e)e.classList.toggle('on',m.code===c)});
-  const box=document.getElementById('mealBox'), rows=document.getElementById('mealRows');
-  box.classList.remove('hidden');rows.innerHTML='';
-  const m=MEAL_BY[c], free=c==='FREE';
-  document.getElementById('mealFillBtn').classList.toggle('hidden',free);
-  document.getElementById('mealAddBtn').textContent=free?'+ item':'+ ingredient';
-  if(free){mealAddRow();mealAddRow()}
-  else m.ing.forEach(([k,q])=>{
-    const d=document.createElement('div');d.className='mrow';d.dataset.k=k;d.dataset.plan=q;
-    d.innerHTML=`<div class="nm">${ING[k].n}</div>
-      <input type="text" inputmode="decimal" class="q" placeholder="${q}" oninput="mealTotals()">
-      <span class="u">${unitOf(k)}</span>`;
-    rows.appendChild(d);
-  });
-  mealTotals();
-}
-function mealAddRow(){
+function logAddRow(){
   const rows=document.getElementById('mealRows'), d=document.createElement('div');d.className='mrow';
-  if(LOG_CODE==='FREE'){
-    d.dataset.free='1';
-    d.innerHTML=`<input type="text" class="ft" placeholder="what (e.g. pizza, cake)">
-      <input type="text" inputmode="decimal" class="q" placeholder="g">
-      <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove()">✕</button>`;
-  }else{
-    d.dataset.extra='1';
-    d.innerHTML=`<select class="vk" onchange="mealTotals()"><option value="">— allowed food —</option>${ALLOWED_KEYS.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pcs)':''}</option>`).join('')}</select>
-      <input type="text" inputmode="decimal" class="q" placeholder="g" oninput="mealTotals()">
-      <button class="x" style="background:none;border:0;color:var(--muted);font-size:1.1rem" onclick="this.parentNode.remove();mealTotals()">✕</button>`;
-  }
+  d.innerHTML=`<select class="vk" onchange="logRowPick(this)">${FOOD_OPTS}</select>
+    <input type="text" class="ft hidden" placeholder="what (e.g. pizza, cake)" oninput="logRowInput()">
+    <input type="text" inputmode="decimal" class="q" placeholder="g" oninput="logRowInput()">
+    <button class="x" onclick="logRowDel(this)" aria-label="Remove row">\u2715</button>`;
   rows.appendChild(d);
 }
-function mealFillPlanned(){
-  document.querySelectorAll('#mealRows .mrow').forEach(r=>{if(r.dataset.plan!=null){const i=r.querySelector('.q');if(i.value.trim()==='')i.value=r.dataset.plan}});
+function logRowPick(sel){
+  const r=sel.parentNode, q=r.querySelector('.q');
+  if(sel.value==='__free'){
+    r.dataset.free='1';sel.classList.add('hidden');
+    const ft=r.querySelector('.ft');ft.classList.remove('hidden');q.placeholder='g';ft.focus();
+  }else q.placeholder=sel.value?unitOf(sel.value):'g';
+  logRowInput();
+}
+function logRowDone(r){
+  const q=numVal(r.querySelector('.q').value.trim());
+  if(r.dataset.free)return r.querySelector('.ft').value.trim()!==''&&q>0;
+  return !!r.querySelector('.vk').value&&q>0;
+}
+/* a completed last row opens the next one; nothing else moves and focus is not touched */
+function logRowInput(){
+  const rs=document.querySelectorAll('#mealRows .mrow');
+  if(!rs.length||logRowDone(rs[rs.length-1]))logAddRow();
   mealTotals();
 }
-/* reads only typed values — a placeholder is never a value */
+function logRowDel(btn){
+  btn.parentNode.remove();
+  if(!document.querySelectorAll('#mealRows .mrow').length)logAddRow();
+  logRowInput();
+}
+/* only typed values are read */
 function mealRead(){
   const items=[],blank=[],free=[];
   document.querySelectorAll('#mealRows .mrow').forEach(r=>{
     const raw=r.querySelector('.q').value.trim(), q=raw===''?null:numVal(raw);
     if(r.dataset.free){const t=r.querySelector('.ft').value.trim();if(t)free.push({t,q:q>0?q:null});return}
-    const k=r.dataset.k||(r.querySelector('.vk')?r.querySelector('.vk').value:'');
+    const k=r.querySelector('.vk').value;
     if(!k)return;
-    if(q==null||!(q>0)){if(r.dataset.k&&raw==='')blank.push(ING[k].n);return}
+    if(q==null||!(q>0)){blank.push(ING[k].n);return}
     items.push({k,q});
   });
   return {items,blank,free};
@@ -2152,49 +2158,71 @@ function mealRead(){
 function itemsMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
 function mealTotals(){
   const el=document.getElementById('mealTot');if(!el)return;
-  if(LOG_CODE==='FREE'){el.textContent='Not counted in the day totals — estimated when you send the export.';return}
-  const {items}=mealRead(), m=itemsMacros(items), plan=MEAL_BY[LOG_CODE]?mealMacros(MEAL_BY[LOG_CODE],1):null;
-  el.innerHTML=(items.length?`Eaten: <b style="color:var(--green)">${m.kc} kcal · ${m.p} g P</b> · ${m.c} g C · ${m.f} g F`:'Nothing typed yet')+(plan?` <span style="opacity:.7">· plan ${plan.kc} kcal · ${plan.p} g P</span>`:'');
+  const {items,free}=mealRead(), m=itemsMacros(items);
+  const date=(document.getElementById('logDate')||{}).value||isoToday(), day=dayTotals(date);
+  el.innerHTML=(items.length?`This entry: <b style="color:var(--green)">${m.kc} kcal \u00B7 ${m.p} g P</b> \u00B7 ${m.c} g C \u00B7 ${m.f} g F<br>Day after saving: <b>${day.kc+m.kc}</b> / ${TGT.kcal} kcal \u00B7 <b>${day.p+m.p}</b> / ${TGT.prot} g P`:'Nothing entered yet.')+
+    (free.length?'<br>Free entries are not counted \u2014 they are estimated when you send the export.':'');
 }
 async function saveMeal(){
-  if(!LOG_CODE){toast('Pick a meal');return}
   const date=document.getElementById('logDate').value||isoToday();
   const time=document.getElementById('logTime').value||'';
   const comment=document.getElementById('logCm').value.trim();
   const {items,blank,free}=mealRead();
-  let rec;
-  if(LOG_CODE==='FREE'){
-    if(!free.length){toast('Write what you ate');return}
-    rec={date,time,code:'FREE',portions:1,comment,kc:0,p:0,c:0,f:0,free,ts:Date.now()};
-  }else{
-    if(!items.length){toast('Type the grams you ate');return}
-    if(blank.length&&!confirm('Left empty = not eaten:\n\n'+blank.join('\n')+'\n\nSave like this?'))return;
-    rec={date,time,code:LOG_CODE,portions:1,comment,...itemsMacros(items),items,ts:Date.now()};
-  }
+  if(!items.length&&!free.length){toast('Add at least one food with an amount');return}
+  if(blank.length&&!confirm('No amount typed \u2014 these will not be saved:\n\n'+blank.join('\n')+'\n\nSave the rest?'))return;
+  const rec={date,time,code:'LOG',portions:1,comment,...itemsMacros(items),items,ts:Date.now()};
+  if(free.length)rec.free=free;
   await put('meals',rec);
-  // a meal eaten today ends a running fast
+  // food logged for today ends a running fast
   if(FAST_ACTIVE&&date===isoToday()){
     const [hh,mm]=(time||'00:00').split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);
     const endTs=Math.max(FAST_ACTIVE.start+60000,Math.min(Date.now(),d.getTime()));
     await endFast(endTs);
   }
   document.getElementById('logCm').value='';
-  LOG_CODE=null;LOG_MEALS.forEach(m=>{const e=document.getElementById('chip-'+m.code);if(e)e.classList.remove('on')});
-  document.getElementById('mealBox').classList.add('hidden');document.getElementById('mealRows').innerHTML='';
-  await loadMeals();renderLog();toast('Meal saved');
+  await loadMeals();initLogForm();renderLog();
+  const L=dayLight(date);
+  toast('Saved \u2014 '+L.word);
+  pageTop();   // the day light is at the top of the Log
 }
 
 async function deleteMeal(id){
-  if(!confirm('Delete this meal?'))return;
+  if(!confirm('Delete this entry?'))return;
   await new Promise((res,rej)=>{const q=tx('meals','readwrite').delete(id);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});
-  await loadMeals();renderLog();
+  await loadMeals();renderLog();mealTotals();
 }
 function dayTotals(date){
   const ms=MEALS_ALL.filter(m=>m.date===date);
   const sum=k=>ms.reduce((a,m)=>a+(m[k]||0),0);
   return {kc:sum('kc'),p:sum('p'),c:sum('c'),f:sum('f'),n:ms.length,
-    clean:ms.length>0&&ms.every(m=>!OFFPLAN.has(m.code)),oth:ms.filter(m=>OFFPLAN.has(m.code)).length,
-    est:ms.some(m=>m.code==='OTH'||m.code==='FREE')};
+    clean:ms.length>0&&ms.every(m=>!isOff(m)),oth:ms.filter(isOff).length,
+    est:ms.some(m=>m.code==='OTH'||m.code==='FREE'||(m.free&&m.free.length))};
+}
+function isOff(m){return OFFPLAN.has(m.code)||!!(m.free&&m.free.length)}
+/* v11.7 — day light, judged on the day's running total against the calorie target T:
+     GREEN  up to T+100      WARN  T+100 … T+200      RED  above T+200
+   A day with a free entry cannot be judged (its calories are not counted) and shows OFF-PLAN,
+   unless the counted part alone is already Warn or Red. Protein and the 1,900 kcal floor are
+   reported next to the light; "too low" is only called once the day is over. */
+const KCAL_FLOOR=1900, PROT_FLOOR=155;
+function dayLight(date){
+  const t=dayTotals(date), T=TGT.kcal, P=TGT.prot;
+  const closed=date<isoToday()||(date===isoToday()&&new Date().getHours()>=19);
+  let cls='g',word='GREEN';
+  if(!t.n){cls='o';word='NOTHING LOGGED'}
+  else if(t.kc>T+200){cls='r';word='RED'}
+  else if(t.kc>T+100){cls='w';word='WARN'}
+  else if(t.est){cls='o';word='OFF-PLAN'}
+  const lines=[];
+  if(t.n){
+    const d=T-t.kc;
+    lines.push({x:`${t.kc} / ${T} kcal \u00B7 `+(d>=0?d+' left':(-d)+' over')});
+    if(t.est)lines.push({x:'Free entry not counted \u2014 the real total is higher',w:1});
+    const pd=P-t.p;
+    lines.push({x:`Protein ${t.p} / ${P} g`+(pd>0?' \u00B7 '+pd+' to go':' \u00B7 reached'),w:closed&&!t.est&&t.p<PROT_FLOOR});
+    if(t.kc<KCAL_FLOOR&&!t.est)lines.push(closed?{x:`Too low: ${KCAL_FLOOR-t.kc} kcal under the ${KCAL_FLOOR} minimum`,w:1}:{x:`${KCAL_FLOOR-t.kc} kcal to the ${KCAL_FLOOR} minimum`});
+  }
+  return {cls,word,lines,t};
 }
 function totBox(n,v,tgt,unit,lowIsGood){
   const over=tgt&&v>tgt*1.05, under=tgt&&v<tgt*0.9;
@@ -2206,28 +2234,32 @@ function renderLog(){
   const date=dEl.value||isoToday();
   const t=dayTotals(date);
   const kk=(n,v,sub,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v}<span style="font-size:.7rem;color:var(--muted)"> ${sub}</span></div></div>`;
-  const kcCls=t.kc?(t.kc>TGT.kcal*1.05?'bad':t.kc<TGT.kcal*0.9?'warn':'ok'):'', pCls=t.p?(t.p>=TGT.prot?'ok':'warn'):'';
+  const L=dayLight(date);
+  document.getElementById('dayLight').innerHTML=`<div class="light ${L.cls}"><div class="t">${L.word}</div>${L.lines.map(l=>`<div class="s${l.w?' w':''}">${l.x}</div>`).join('')}</div>`;
+  const kcCls=t.kc?(L.cls==='r'?'bad':L.cls==='w'?'warn':'ok'):'', pCls=t.p?(t.p>=PROT_FLOOR?'ok':'warn'):'';
   document.getElementById('dayTot').innerHTML=kk('kcal',t.kc,'/ '+TGT.kcal,kcCls)+kk('Protein',t.p,'/ '+TGT.prot+' g',pCls)+
     kk('Carbs',t.c,'g'+(t.est?' · free entry not counted':''),'')+kk('Fat',t.f,'g'+(t.f&&t.f<45?' · < 45':''),t.f&&t.f<45&&t.n>=3?'warn':'');
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   document.getElementById('dayMeals').innerHTML=ms.length?ms.map(m=>`<div class="ml">
-      <div class="code">${m.code}</div>
-      <div style="flex:1"><div class="nm">${MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
+      <div class="code"${m.code==='LOG'?' style="min-width:14px"':''}>${m.code==='LOG'?'\u2022':m.code}</div>
+      <div style="flex:1"><div class="nm">${m.code==='LOG'?'Logged food':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code)}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
         ${m.items&&m.items.length?`<div class="cm">${m.items.map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(ING[x.k]&&ING[x.k].u==='pcs'?' pcs':' g')).join(' · ')}</div>`:''}
         ${m.free&&m.free.length?`<div class="cm">${m.free.map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · ')}</div>`:''}
         ${m.comment?`<div class="cm">${esc(m.comment)}</div>`:''}</div>
-      <div class="mac">${m.code==='FREE'?'<span class="muted">not<br>counted</span>':`<b>${m.p||0}P</b><br>${m.kc||0} kcal`}</div>
+      <div class="mac">${m.code==='FREE'||(m.code==='LOG'&&!(m.items&&m.items.length))?'<span class="muted">not<br>counted</span>':`<b>${m.p||0}P</b><br>${m.kc||0} kcal`}</div>
       <button class="x" onclick="deleteMeal(${m.id})">✕</button></div>`).join('')
     :'<div class="muted">Nothing logged for this day.</div>';
   // history 14 days
   const days=[];for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(isoOf(d.getTime()))}
   const hist=days.map(d=>{const x=dayTotals(d);if(!x.n)return '';
-    const codes=MEALS_ALL.filter(m=>m.date===d).map(m=>m.code).join(' · ');
-    const kcCls=x.kc>TGT.kcal*1.05?'bad':'ok', pCls=x.p>=TGT.prot?'ok':'warn';
+    const dm=MEALS_ALL.filter(m=>m.date===d), nl=dm.filter(m=>m.code==='LOG').length;
+    const codes=dm.filter(m=>m.code!=='LOG').map(m=>m.code).concat(nl?[nl+(nl===1?' entry':' entries')]:[]).join(' · ');
+    const hl=dayLight(d).cls;
+    const kcCls=hl==='r'?'bad':hl==='w'?'warn':'ok', pCls=x.p>=PROT_FLOOR?'ok':'warn';
     return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();pageTop()">
       <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">off-plan ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
       <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} P · ${x.c} C · ${x.f} F</div></div></div>`}).join('');
-  document.getElementById('logHist').innerHTML=hist||'<div class="muted">No meals logged yet.</div>';
+  document.getElementById('logHist').innerHTML=hist||'<div class="muted">Nothing logged yet.</div>';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
