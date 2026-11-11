@@ -20,6 +20,13 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 ---
 
+## v11.5.1 (11 Nov 2026)
+
+Fix: on iOS 26 the rest timer and tab bar floated mid-screen over the set rows after the keyboard closed, and the page jumped while typing.
+- Layout is now an app shell: header, rest box and tab bar are flex rows, only the content area scrolls. Nothing is `position:fixed`, so the rest box cannot cover a set.
+- Shell height is pinned to the tallest window height seen; the document is un-panned once the keyboard is gone.
+- No data, store, export or program changes.
+
 ## v11.5 (10 Nov 2026)
 
 - **Food → Log records what was eaten.** Pick a meal; every ingredient gets a row with the planned raw grams in grey. The box is empty until you type; an empty box means not eaten (confirmed on save). "+ ingredient" offers only allowed foods; "Fill planned" copies the plan when you ate exactly that. Macros are computed from the typed grams.

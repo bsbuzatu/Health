@@ -24,8 +24,13 @@
 html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
   font-size:var(--fs);overscroll-behavior-y:none}
-body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-body.resting{padding-bottom:calc(84px + 180px + env(safe-area-inset-bottom))} /* v10.2: room to scroll under the rest box */
+/* v11.5.1: app shell. Nothing is position:fixed any more — iOS 26 leaves fixed
+   elements floating mid-screen after the keyboard closes. Header, rest box and nav
+   are flex rows; only <main> scrolls, so the rest box can never cover a set. */
+html,body{height:100%;overflow:hidden}
+#app{display:flex;flex-direction:column;height:var(--appH,100dvh);overflow:hidden}
+#app>main{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:16px}
+#app>header,#app>nav,#app>#rest{flex:0 0 auto}
 button,input,select{font-family:inherit;font-size:1rem;color:var(--txt)}
 input,select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
 input:focus,select:focus{outline:none;border-color:var(--green)}
@@ -34,7 +39,7 @@ h1,h2,h3{margin:0}
 
 /* login: removed in v10.1 */
 
-header{position:sticky;top:0;background:rgba(0,0,0,.92);backdrop-filter:blur(10px);
+header{background:rgba(0,0,0,.92);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 16px 12px;z-index:50}
 header h2{color:var(--green);font-size:1.15rem;letter-spacing:.04em}
 header .sub{color:var(--muted);font-size:.72rem;margin-top:2px}
@@ -106,7 +111,7 @@ input::placeholder{opacity:1}
 
 /* rest timer (v10.1): readable from the floor without glasses.
    Counting down: discreet panel colour. At zero: fluorescent green, black text. */
-#rest{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));
+#rest{margin:6px 12px 8px;
   background:var(--panel2);border:2px solid var(--line);border-radius:18px;
   padding:14px 18px;display:flex;justify-content:space-between;align-items:center;z-index:60;
   transition:background .25s,border-color .25s}
@@ -123,7 +128,7 @@ input::placeholder{opacity:1}
 #rest.zero button{border-color:#0a3a00;color:#0a3a00}
 
 /* nav */
-nav{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.95);
+nav{background:rgba(0,0,0,.95);
   backdrop-filter:blur(12px);border-top:1px solid var(--line);
   display:grid;grid-template-columns:repeat(5,1fr);
   padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:70}
@@ -254,7 +259,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.5 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.5.1 · gym · fast · food</div>
   </header>
 
   <main>
@@ -789,7 +794,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-10-v11.5';
+const BUILD='2026-11-11-v11.5.1';
 
 /* ============================================================
    State
@@ -838,7 +843,7 @@ function go(v){
   if(v==='fast')renderFast();
   if(v==='foods')foodTab(FOOD_TAB);
   if(v==='set'){renderDiag();paintDeloadBtn()}
-  window.scrollTo(0,0);
+  pageTop();
 }
 
 /* ============================================================
@@ -872,6 +877,32 @@ function rv(id){return boxVal(document.getElementById(id))}
 document.addEventListener('focusin', e=>{const t=e.target;if(t&&t.matches&&t.matches(NUMBOX))ffPark(t)});
 document.addEventListener('focusout',e=>{const t=e.target;if(t&&t.matches&&t.matches(NUMBOX))ffUnpark(t)});
 document.addEventListener('input',   e=>{const t=e.target;if(t&&t.matches&&t.matches(NUMBOX))t.dataset.ffTyped='1'});
+
+/* v11.5.1 — shell height + iOS keyboard guard.
+   --appH is the tallest window height seen (px), so a viewport that iOS forgets to
+   grow back after the keyboard cannot shrink the app. The document itself never
+   scrolls; if iOS pans it for the keyboard, it is put back once the keyboard is gone. */
+function pageTop(){const m=document.querySelector('#app>main');if(m)m.scrollTop=0}
+let APP_H=0,APP_W=0;
+function fitShell(){
+  const h=window.innerHeight,w=window.innerWidth;
+  if(w!==APP_W){APP_W=w;APP_H=h}else if(h>APP_H)APP_H=h;
+  document.documentElement.style.setProperty('--appH',APP_H+'px');
+}
+function kbOpen(){const a=document.activeElement;return !!(a&&a.matches&&a.matches('input,textarea,select'))}
+function unpan(){
+  if(kbOpen())return;
+  fitShell();
+  if(window.scrollY||window.scrollX||document.documentElement.scrollTop||document.body.scrollTop){
+    window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0}
+}
+fitShell();
+window.addEventListener('resize',fitShell);
+window.addEventListener('orientationchange',()=>setTimeout(fitShell,300));
+document.addEventListener('focusout',()=>{setTimeout(unpan,120);setTimeout(unpan,450)});
+window.addEventListener('scroll',()=>{if(!kbOpen())unpan()},{passive:true});
+if(window.visualViewport){visualViewport.addEventListener('resize',()=>setTimeout(unpan,80));
+  visualViewport.addEventListener('scroll',()=>setTimeout(unpan,80))}
 
 function toast(m){
   const t=document.getElementById('toast');
@@ -1115,7 +1146,7 @@ function startWorkout(sid){
   document.getElementById('finishBtn').classList.add('hidden');
   document.getElementById('backBtn').textContent='Back';
   renderRun();
-  window.scrollTo(0,0);
+  pageTop();
 }
 
 /* Start efectiv: cronometru, wake lock, inputuri active. */
@@ -1139,7 +1170,7 @@ function leaveSession(){
   W=null;
   document.getElementById('sessRun').classList.add('hidden');
   document.getElementById('sessPick').classList.remove('hidden');
-  window.scrollTo(0,0);
+  pageTop();
 }
 
 function renderRun(){
@@ -1251,14 +1282,14 @@ async function finishWorkout(){
   document.getElementById('sessRun').classList.add('hidden');
   document.getElementById('sessPick').classList.remove('hidden');
   await buildLastMap();await renderRecent();
-  toast('Saved');window.scrollTo(0,0);
+  toast('Saved');pageTop();
 }
 function abortWorkout(){
   if(!confirm('Cancel workout? Nothing will be saved.'))return;
   stopRest();stopRunClock();releaseWakeLock();W=null;RUNNING=false;
   document.getElementById('sessRun').classList.add('hidden');
   document.getElementById('sessPick').classList.remove('hidden');
-  window.scrollTo(0,0);
+  pageTop();
 }
 
 /* clock + rest (fara sunet, fara alerta) */
@@ -1277,7 +1308,7 @@ function startRest(sec,label){
   restLeft=sec;
   const box=document.getElementById('rest');
   box.classList.remove('hidden','zero');
-  document.body.classList.add('resting');
+  
   document.getElementById('restLbl').textContent=label||'Pauza';
   paintRest();
   if(restTimer)clearInterval(restTimer);
@@ -1291,7 +1322,7 @@ function paintRest(){document.getElementById('restT').textContent=Math.floor(res
 function addRest(s){restLeft+=s;document.getElementById('rest').classList.remove('zero');
   if(!restTimer)startRest(restLeft,document.getElementById('restLbl').textContent);paintRest()}
 function stopRest(){if(restTimer)clearInterval(restTimer);restTimer=null;
-  document.getElementById('rest').classList.add('hidden');document.body.classList.remove('resting')}
+  document.getElementById('rest').classList.add('hidden')}
 
 async function requestWakeLock(){
   try{if('wakeLock' in navigator)wakeLock=await navigator.wakeLock.request('screen')}catch(e){}
@@ -1934,7 +1965,7 @@ function foodTab(t){
     document.getElementById('ft-'+k).classList.toggle('on',k===t);
   });
   if(t==='log')renderLog();if(t==='cook')renderMeals();if(t==='shop')renderShop();
-  window.scrollTo(0,0);
+  pageTop();
 }
 
 /* ---- LOG  (store 'meals': {id,date,time,code,portions,comment,kc,p,c,f}) ---- */
@@ -2080,7 +2111,7 @@ function renderLog(){
   const hist=days.map(d=>{const x=dayTotals(d);if(!x.n)return '';
     const codes=MEALS_ALL.filter(m=>m.date===d).map(m=>m.code).join(' · ');
     const kcCls=x.kc>TGT.kcal*1.05?'bad':'ok', pCls=x.p>=TGT.prot?'ok':'warn';
-    return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();window.scrollTo(0,0)">
+    return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();pageTop()">
       <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">off-plan ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
       <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} P · ${x.c} C · ${x.f} F</div></div></div>`}).join('');
   document.getElementById('logHist').innerHTML=hist||'<div class="muted">No meals logged yet.</div>';
