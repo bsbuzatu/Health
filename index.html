@@ -75,8 +75,8 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .ex-name{font-weight:700;font-size:1.15rem;line-height:1.25}
 .ex-meta{color:var(--muted);font-size:.95rem;margin-top:4px}
 .ex-idx{color:var(--green-dim);font-size:.72rem;font-weight:700;min-width:22px}
-.setrow{display:grid;grid-template-columns:26px 1fr 1fr 52px;gap:8px;align-items:center;margin-top:9px}
-.setrow .n{color:var(--muted);font-size:.95rem;text-align:center}
+.setrow{display:grid;grid-template-columns:40px 1fr 1fr 52px;gap:8px;align-items:center;margin-top:9px}
+.setrow .n{color:var(--muted);font-size:.82rem;text-align:center}
 .setrow input{padding:12px 8px;text-align:center;font-size:1.15rem;font-weight:700;
   font-variant-numeric:tabular-nums}
 .setrow input.tgt{color:#8fb989;font-weight:600}
@@ -176,7 +176,8 @@ td{padding:8px 4px;border-bottom:1px solid #131813;text-align:right;font-variant
 .histDetail .st{font-variant-numeric:tabular-nums;font-size:.95rem;padding:2px 0 2px 12px}
 .histDetail .st.wu{color:var(--muted);font-size:.85rem}
 .histDetail .note{color:var(--muted);font-size:.85rem;padding:6px 0 0;font-style:italic}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom));
+/* v11.6: toast sits under the header, never over the rest timer or the set rows */
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(104px + env(safe-area-inset-top));white-space:nowrap;pointer-events:none;
   background:var(--green);color:#000;padding:11px 18px;border-radius:999px;font-size:.78rem;
   font-weight:700;z-index:200;opacity:0;transition:opacity .2s}
 .toast.on{opacity:1}
@@ -259,7 +260,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.5.1 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.6 · gym · fast · food</div>
   </header>
 
   <main>
@@ -289,14 +290,19 @@ nav button{font-size:.62rem}
 
         <div id="startBar" class="card" style="border-color:var(--green-dim)">
           <div class="muted" style="margin-bottom:10px">
-            Preview. Boxes show your last recorded values for each set. Edit them if you lift more today. Nothing is recorded until Start.
+            Preview. Each exercise is one top set, then one lighter back-off set. Boxes show the value to aim for. Tap the circle to log it as shown, or type what you actually did. Nothing is recorded until Start.
           </div>
           <button class="btn primary" onclick="beginWorkout()">&#9654;&nbsp; Start workout</button>
         </div>
 
         <div id="exList"></div>
+        <div class="card" id="noteCard">
+          <h3>Notes</h3>
+          <textarea id="runNote" rows="4" placeholder="Anything about this session: how it felt, dizziness, pain, equipment, sleep…" style="min-height:110px"></textarea>
+          <div class="muted" style="margin-top:6px;font-size:.8rem">Saved with the workout and included in the export.</div>
+        </div>
         <button class="btn primary hidden" id="finishBtn" onclick="finishWorkout()">Finish workout</button>
-        <div style="height:70px"></div>
+        <div style="height:24px"></div>
       </div>
     </section>
 
@@ -375,8 +381,7 @@ nav button{font-size:.62rem}
       <div class="card">
         <h3>Sets per muscle group (7 days)</h3>
         <div class="tw"><table id="muscleTable"></table></div>
-        <div class="muted" style="margin-top:8px">Retention targets while in a caloric deficit.
-        Quads and hamstrings have priority — they were under threshold in the old split.</div>
+        <div class="muted" style="margin-top:8px">Recomposition phase: direct working sets per week that keep muscle in a deficit (one top set + one back-off set per exercise, 3 sessions). The go-to plan's higher targets return with it.</div>
       </div>
 
       <div class="card">
@@ -655,7 +660,19 @@ Object.keys(EX).forEach(id=>{
   EX[id].a.forEach(x=>ALIAS[x.toLowerCase()]=id);
 });
 
-const SESSIONS=[
+/* ============================================================
+   v11.6 \u2014 PROGRAMS
+   SESSIONS_GOTO = the go-to plan (v11.5 full-body A/B/C, straight sets). PAUSED, not retired:
+   it comes back when the fat-loss phase ends. To restore: SESSIONS=SESSIONS_GOTO,
+   MUSCLE_TARGET=MUSCLE_TARGET_GOTO, PHASE=null.
+   SESSIONS = the active program: recomposition phase. 6 exercises, ~45 min. Every exercise is
+   ONE TOP SET (RIR 2\u20133, low end of the range) + ONE BACK-OFF SET (15\u201320 % lighter, high end,
+   3 s lowering). plan:[[kg,reps],[kg,reps]] = starting targets taken from the logged history;
+   they are shown until the exercise has been logged once in this phase, then the boxes show
+   the last logged values. No automatic progression.
+   ============================================================ */
+const PHASE={id:'recomp1', from:'2026-11-12', label:'Recomposition phase'};
+const SESSIONS_GOTO=[
   /* v10 \u2014 3x/sapt, 45 de ani, sustenabil. Serii drepte la aceeasi greutate, RIR 2 pe compuse,
      RIR 1 pe izolari. wu = incalziri [fractie din greutatea de lucru, reps], rinduri separate,
      excluse din volum si progresie. bar = niciodata sub bara de 20 kg. inc = cel mai mic pas real. */
@@ -693,6 +710,34 @@ const SESSIONS=[
     {id:'pallof',      sets:2, reps:'10\u201312 /side', rir:'1',  rest:60,  inc:2.5}
   ]}
 ];
+const SESSIONS=[
+  {id:'fbA', day:'Monday', name:'Full-Body A \u2014 Squat + Bench', ex:[
+    {id:'bbSquat',     sets:2, reps:'6\u201310',  rir:'2\u20133', rest:120, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]], plan:[[60,8],[50,10]]},
+    {id:'bench',       sets:2, reps:'6\u201310',  rir:'2\u20133', rest:120, inc:2.5, bar:true, wu:[[0.5,8],[0.75,3]], plan:[[70,8],[60,10]]},
+    {id:'supPulldown', sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:5,   wu:[[0.6,6]],                    plan:[[60,9],[50,12]]},
+    {id:'seatCurl',    sets:2, reps:'10\u201315', rir:'2',        rest:90,  inc:5,                                     plan:[[40,12],[35,14]]},
+    {id:'dbLat',       sets:2, reps:'12\u201320', rir:'2',        rest:75,  inc:1,                                     plan:[[8,12],[6,15]]},
+    {id:'machCrunch',  sets:2, reps:'10\u201315', rir:'2',        rest:60,  inc:5,                                     plan:[[70,12],[60,15]]}
+  ]},
+  /* B: a seated press sits between leg press and RDL, so the two lifts with a low head
+     position and hard bracing are never back to back. RDL 8\u201312 = lighter bar. */
+  {id:'fbB', day:'Wednesday', name:'Full-Body B \u2014 Leg Press + OHP', ex:[
+    {id:'legPress',    sets:2, reps:'10\u201315', rir:'2\u20133', rest:120, inc:5,   wu:[[0.5,8],[0.75,3]],           plan:[[70,10],[60,12]]},
+    {id:'ohp',         sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:2.5, wu:[[0.6,6]],                    plan:[[22.5,8],[20,10]]},
+    {id:'rdl',         sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:2.5, bar:true, wu:[[0.6,6]],          plan:[[75,8],[60,12]]},
+    {id:'sarow',       sets:2, reps:'8\u201312',  rir:'2\u20133', rest:90,  inc:2.5, wu:[[0.6,6]],                    plan:[[30,8],[25,12]]},
+    {id:'hammer',      sets:2, reps:'10\u201315', rir:'2',        rest:75,  inc:2.5,                                   plan:[[12.5,10],[10,14]]},
+    {id:'seatCalf',    sets:2, reps:'12\u201315', rir:'2',        rest:60,  inc:5,                                     plan:[[40,12],[35,15]]}
+  ]},
+  {id:'fbC', day:'Friday', name:'Full-Body C \u2014 Hip Thrust + Incline', ex:[
+    {id:'hipThrust',   sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:5,   bar:true, wu:[[0.5,8],[0.75,3]], plan:[[80,8],[65,12]]},
+    {id:'inclDB',      sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:2.5, wu:[[0.6,6]],                    plan:[[30,8],[25,12]]},
+    {id:'cgPulldown',  sets:2, reps:'8\u201312',  rir:'2\u20133', rest:120, inc:5,   wu:[[0.6,6]],                    plan:[[60,8],[50,12]]},
+    {id:'legExt',      sets:2, reps:'12\u201315', rir:'2',        rest:75,  inc:5,                                     plan:[[45,12],[40,15]]},
+    {id:'pushdown',    sets:2, reps:'10\u201315', rir:'2',        rest:60,  inc:2.5,                                   plan:[[25,10],[20,13]]},
+    {id:'facePull',    sets:2, reps:'15\u201320', rir:'2',        rest:60,  inc:2.5,                                   plan:[[30,15],[25,18]]}
+  ]}
+];
 
 
 /* Zone 2 \u2014 personal band (resting HR ~67, estimated max 177) */
@@ -709,7 +754,9 @@ const MUSCLE={
   hipThrust:'glutes', oneLegCalf:'calves', seatCalf:'calves',
   machCrunch:'abs', pallof:'abs'
 };
-const MUSCLE_TARGET={quads:8, hamstrings:8, chest:8, back:11, delts:10, glutes:3, calves:4, biceps:4, triceps:4, abs:4};
+const MUSCLE_TARGET_GOTO={quads:8, hamstrings:8, chest:8, back:11, delts:10, glutes:3, calves:4, biceps:4, triceps:4, abs:4};
+/* v11.6: direct working sets per week in the recomposition phase (3 sessions) */
+const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, calves:2, biceps:2, triceps:2, abs:2};
 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
@@ -794,7 +841,7 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-11-v11.5.1';
+const BUILD='2026-11-11-v11.6';
 
 /* ============================================================
    State
@@ -802,6 +849,7 @@ const BUILD='2026-11-11-v11.5.1';
 let W=null;                 // antrenamentul curent (sau doar previzualizat)
 let RUNNING=false;          // false = mod consultare, true = sesiune pornita
 let wakeLock=null, runTimer=null, restTimer=null, restLeft=0;
+let SUG={};                 // 'i-j' -> {w,r} suggestion shown in the boxes of the running session
 let lastMap={};             // exId -> {date, sets:[]}
 let DELOAD=false;           // mod deload: -40% serii, acelea\u0219i greut\u0103\u021Bi
 let Z2RUN=null, z2Timer=null;   // sesiune Zone 2 \u00EEn desf\u0103\u0219urare
@@ -927,10 +975,11 @@ async function buildLastMap(){
       if(!id)return;
       const sets=(e.sets||[]).filter(s=>s.done&&(s.weight!=null||s.reps!=null));
       if(!sets.length)return;
-      lastMap[id]={date:w.date,sets:sets.map(s=>({w:s.weight,r:s.reps})),prev:lastMap[id]||null};
+      lastMap[id]={date:w.date,prog:w.prog||null,sets:sets.map(s=>({w:s.weight,r:s.reps})),prev:lastMap[id]||null};
     });
   });
 }
+function escHtml(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function fmtD(d){if(!d)return '';const p=d.split('-');return p[2]+'.'+p[1]}
 
 /* ============================================================
@@ -956,14 +1005,26 @@ function workingOf(L){
    time; if last time had fewer sets, the extra rows are empty. No 80 % filter, no padding,
    no suggestion. The values live in the placeholder only — the box itself starts empty
    and a set cannot be confirmed until both numbers are typed (boxVal never reads placeholders). */
+/* v11.6: what the boxes suggest. If the exercise has been logged in the current phase,
+   set j shows set j of that last session, verbatim. Otherwise the phase plan (starting
+   targets). Old-program sessions (three ramped sets) are never mapped onto top/back-off.
+   The value sits in the placeholder; ticking a set with empty boxes logs it (sug:true). */
 function targetSets(exDef){
   const L=lastMap[exDef.id];
-  if(!L||!L.sets.length)return null;
-  const sets=L.sets.filter(x=>x.r!=null||x.w!=null);
-  if(!sets.length)return null;
-  const n=exDef.sets, out=[];
-  for(let j=0;j<n;j++){const src=sets[j];out.push(src?{w:src.w,r:src.r}:null)}
-  return {sets:out, lastTop:sets.map(x=>(x.w==null?'bw':x.w)+'\u00D7'+x.r).join(', '), lastDate:L.date};
+  const inPhase=!exDef.plan||!PHASE||(L&&L.prog===PHASE.id);
+  if(L&&L.sets.length&&inPhase){
+    const sets=L.sets.filter(x=>x.r!=null||x.w!=null);
+    if(sets.length){
+      const n=exDef.sets, out=[];
+      for(let j=0;j<n;j++){const src=sets[j],pl=exDef.plan&&exDef.plan[j];out.push(src?{w:src.w,r:src.r}:(pl?{w:pl[0],r:pl[1]}:null))}  // a set skipped last time falls back to its plan value
+      return {src:'last',sets:out, lastTop:sets.map(x=>(x.w==null?'bw':x.w)+'\u00D7'+x.r).join(', '), lastDate:L.date};
+    }
+  }
+  if(exDef.plan&&exDef.plan.length){
+    const out=[];for(let j=0;j<exDef.sets;j++){const p=exDef.plan[j];out.push(p?{w:p[0],r:p[1]}:null)}
+    return {src:'plan',sets:out,lastTop:exDef.plan.map(p=>p[0]+'\u00D7'+p[1]).join(', '),lastDate:null};
+  }
+  return null;
 }
 /* Warm-up rows for today: actual kg from the working weight, rounded to the exercise
    increment (never finer than 2.5 kg); barbell lifts never below the 20 kg bar. */
@@ -990,7 +1051,7 @@ async function renderSessions(){
   const plan=`<div class="card"><h3>Week</h3>
       <div class="muted">Lift Mon / Wed / Fri, Zone 2 on the other days (no cardio after lifting).
       Sessions rotate <b style="color:var(--green)">A \u2192 B \u2192 C</b> by what you did last, not by weekday:
-      miss a day, do the next letter \u2014 never skip one. In a 2-session week every muscle still gets 2 stimuli.</div>
+      miss a day, do the next letter \u2014 never skip one.<br><b style="color:var(--green)">Recomposition phase:</b> ~45 min, 6 exercises, each one top set + one lighter back-off set. Drink 500 ml water with a pinch of salt before; stand up slowly after leg press and RDL.</div>
       ${weekPlanHtml()}</div>`;
   document.getElementById('sessList').innerHTML=dl+plan+SESSIONS.map(s=>{
     const n=s.ex.reduce((a,e)=>a+deloadSets(e.sets),0);
@@ -1105,7 +1166,7 @@ async function renderRecent(){
     const mins=w.startTs&&w.endTs?Math.round((w.endTs-w.startTs)/60000):null;
     return `<div class="hist tap" id="hist-${k}" onclick="toggleHist(${k})"><div><div class="d">${w.date}</div>
       <div class="m">${w.sessionName||w.sessionId||''}${w.deload?' \u00B7 deload':''}</div></div>
-      <div style="text-align:right"><div class="d">${sets} seturi</div>
+      <div style="text-align:right"><div class="d">${sets} sets</div>
       <div class="m">${vol?Math.round(vol)+' kg vol':''}${mins?' \u00B7 '+mins+' min':''} \u203A</div></div></div>
       <div class="histDetail hidden" id="histD-${k}"></div>`;
   }).join('')+(ws.length>RECENT.length?`<button class="btn ghost" style="margin-top:10px" onclick="RECENT_LIMIT+=12;renderRecent()">Show older (${ws.length-RECENT.length} more)</button>`:'');
@@ -1123,8 +1184,8 @@ function toggleHist(k){
     if(!wu.length&&!st.length)return '';
     return `<div class="ex">${i+1}. ${e.name||EX[e.exId]?.n||e.exId} <span class="tg">${e.targetSets||''}${e.targetReps?' \u00D7 '+e.targetReps:''}${e.rir?' \u00B7 RIR '+e.rir:''}</span></div>`+
       wu.map((x,j)=>`<div class="st wu">W${j+1}\u2003${fmt(x)}</div>`).join('')+
-      st.map((x,j)=>`<div class="st">${j+1}\u2003${fmt(x)}</div>`).join('');
-  }).join('')+(w.note?`<div class="note">${w.note}</div>`:'');
+      st.map((x,j)=>`<div class="st">${j+1}\u2003${fmt(x)}${x.sug?' <span class="tg">as suggested</span>':''}</div>`).join('');
+  }).join('')+(w.note?`<div class="note" style="white-space:pre-wrap">${escHtml(w.note)}</div>`:'');
 }
 
 /* Deschide programul in modul consultare. Nu porneste nimic. */
@@ -1132,10 +1193,11 @@ function startWorkout(sid){
   const S=SESSIONS.find(x=>x.id===sid);
   RUNNING=false;
   W={date:isoToday(),type:'strength',sessionId:S.id,sessionName:S.name,startTs:null,endTs:null,
+     prog:PHASE?PHASE.id:undefined,
      deload:DELOAD||undefined,
      exercises:S.ex.map(e=>({exId:e.id,name:EX[e.id].n,targetSets:deloadSets(e.sets),targetReps:e.reps,
        rir:DELOAD?'3\u20134':e.rir,rest:e.rest,unit:e.unit||'reps',inc:e.inc||2.5,
-       ss:e.ss||null, wu:e.wu||null, bar:!!e.bar,
+       ss:e.ss||null, wu:e.wu||null, bar:!!e.bar, plan:e.plan||null,
        wuSets:[],
        sets:Array.from({length:deloadSets(e.sets)},()=>({weight:null,reps:null,done:false}))}))};
   document.getElementById('sessPick').classList.add('hidden');
@@ -1145,6 +1207,7 @@ function startWorkout(sid){
   document.getElementById('startBar').classList.remove('hidden');
   document.getElementById('finishBtn').classList.add('hidden');
   document.getElementById('backBtn').textContent='Back';
+  const rn=document.getElementById('runNote');if(rn)rn.value='';
   renderRun();
   pageTop();
 }
@@ -1174,11 +1237,13 @@ function leaveSession(){
 }
 
 function renderRun(){
+  SUG={};
   document.getElementById('exList').innerHTML=W.exercises.map((e,i)=>{
     const doneAll=RUNNING&&e.sets.every(s=>s.done);
     /* v10.3: boxes hold the last recorded values. Confirming a set saves exactly
        what is in the boxes \u2014 edit first if you did something different. */
-    const T=targetSets({id:e.exId,reps:e.targetReps,sets:e.sets.length,inc:e.inc});
+    const T=targetSets({id:e.exId,reps:e.targetReps,sets:e.sets.length,inc:e.inc,plan:e.plan});
+    const TB=!!e.plan;
     /* Warm-ups: computed once from today's working weight (target, or first box the user typed). */
     const typed=e.sets.find(s=>s.weight!=null);
     const lastTopW=T?Math.max(0,...T.sets.filter(x=>x&&x.w!=null).map(x=>x.w)):0;
@@ -1193,13 +1258,14 @@ function renderRun(){
       </div>`).join('');
     const rows=e.sets.map((s,j)=>{
       const tv=T&&T.sets[j]?T.sets[j]:null;
+      SUG[i+'-'+j]=tv;
       const touchedW=s.weight!=null, touchedR=s.reps!=null;
       const wVal=touchedW?s.weight:'';
       const rVal=touchedR?s.reps :'';
       const phW=tv&&tv.w!=null?tv.w:'kg', phR=tv&&tv.r!=null?tv.r:(e.unit==='sec'?'sec':'reps');
       const dis=RUNNING?'':'disabled';
       return `<div class="setrow ${s.done?'ok':''}" id="sr-${i}-${j}">
-        <div class="n">${j+1}</div>
+        <div class="n">${TB?(j===0?'Top':'Back'):j+1}</div>
         <input type="text" inputmode="decimal" placeholder="${phW}" class="${tv&&tv.w!=null?'last':''}" ${dis}
           id="w-${i}-${j}" value="${wVal}" oninput="setVal(${i},${j},'weight',this.value)">
         <input type="text" inputmode="numeric" placeholder="${phR}" class="${tv&&tv.r!=null?'last':''}" ${dis}
@@ -1207,13 +1273,13 @@ function renderRun(){
         <button class="chk" ${dis} onclick="toggleSet(${i},${j})">${s.done?'\u2713':'\u25CB'}</button>
       </div>`;
     }).join('');
-    const ref=T?`<div class="muted" style="margin-top:8px;font-size:.88rem">Last (${fmtD(T.lastDate)}): ${T.lastTop} \u2014 shown in the boxes, type what you do today</div>`:'';
+    const ref=T?`<div class="muted" style="margin-top:8px;font-size:.88rem">${T.src==='plan'?'Target':'Last ('+fmtD(T.lastDate)+')'}: ${T.lastTop} \u2014 tap \u25CB to log it as shown, or type what you did</div>`:'';
     const hintHtml='';
     return `<div class="ex ${doneAll?'done':''}" id="ex-${i}">
       <div class="ex-h">
         <div style="flex:1">
           <div class="ex-name"><span class="ex-idx">${i+1}</span> ${e.name}</div>
-          <div class="ex-meta">${e.targetSets} \u00D7 ${e.targetReps} \u00B7 RIR ${e.rir} \u00B7 rest ${e.rest>=60?(e.rest/60)+' min':e.rest+' s'}${e.ss?'<br><span style="color:var(--green-dim)">'+e.ss+'</span>':''}</div>
+          <div class="ex-meta">${TB?(e.sets.length>1?'Top set + back-off':'Top set only'):e.targetSets+' \u00D7'} ${TB?'\u00B7 ':''}${e.targetReps}${TB?' reps':''} \u00B7 <span style="white-space:nowrap">RIR ${e.rir}</span> \u00B7 rest ${e.rest>=60?(e.rest/60)+' min':e.rest+' s'}${e.ss?'<br><span style="color:var(--green-dim)">'+e.ss+'</span>':''}</div>
         </div>
       </div>
       ${wuRows}
@@ -1251,10 +1317,17 @@ function toggleSet(i,j){
   if(!RUNNING)return;
   const s=W.exercises[i].sets[j];
   const wi=document.getElementById(`w-${i}-${j}`), ri=document.getElementById(`r-${i}-${j}`);
-  const wv=numVal(boxVal(wi)), rv=numVal(boxVal(ri));
-  if(!s.done&&(wv==null||rv==null)){
-    toast('Enter kg and reps first');
-    return;
+  let wv=numVal(boxVal(wi)), rv=numVal(boxVal(ri));
+  /* v11.6: an empty box takes the suggested value shown in it; the set is flagged sug:true
+     so typed and accepted values can be told apart in the export. */
+  let sug=false;
+  if(!s.done){
+    const tv=SUG[i+'-'+j];
+    if(wv==null&&tv&&tv.w!=null){wv=tv.w;sug=true}
+    if(rv==null&&tv&&tv.r!=null){rv=tv.r;sug=true}
+    if(wv==null||rv==null){toast('Nothing to log \u2014 type kg and reps');return}
+    wi.value=wv;ri.value=Math.round(rv);
+    if(sug)s.sug=true;else delete s.sug;
   }
   if(!s.done){wi.classList.remove('tgt');ri.classList.remove('tgt')}
   s.done=!s.done;
@@ -1274,6 +1347,7 @@ async function finishWorkout(){
   const any=W.exercises.some(e=>e.sets.some(s=>s.done));
   if(!any){toast('No sets confirmed');return}
   W.endTs=Date.now();
+  {const n=(document.getElementById('runNote').value||'').trim();if(n)W.note=n;else delete W.note}
   W.exercises=W.exercises.map(e=>({...e,sets:e.sets.filter(s=>s.done),wuSets:(e.wuSets||[]).filter(s=>s.done)}));  // doar seturile confirmate; incalzirile raman separate de .sets
   await put('workouts',W);
   await saveMetricsForDay(W.date,{workout:W.sessionId,trainingDay:true});
@@ -1309,7 +1383,7 @@ function startRest(sec,label){
   const box=document.getElementById('rest');
   box.classList.remove('hidden','zero');
   
-  document.getElementById('restLbl').textContent=label||'Pauza';
+  document.getElementById('restLbl').textContent=label||'Rest';
   paintRest();
   if(restTimer)clearInterval(restTimer);
   restTimer=setInterval(()=>{

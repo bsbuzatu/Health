@@ -20,6 +20,16 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 ---
 
+## v11.6 (11 Nov 2026)
+
+Recomposition-phase program and faster logging.
+- **Program:** three full-body sessions of 6 exercises (~45 min). Every exercise is one top set (RIR 2–3) and one lighter back-off set. The previous A/B/C program is kept in the source as `SESSIONS_GOTO` (paused, not removed).
+- **Target values:** each set box shows the value to aim for — the phase's starting target until the exercise has been logged once in this phase, then the last logged value. No automatic progression.
+- **One-tap logging:** tapping the circle with empty boxes logs the value shown. Such sets carry `sug:true` in the export; typed values do not.
+- **Notes:** a multiline notes field at the end of the session, saved with the workout (`note`) and shown in the history.
+- **UI:** toast moved under the header so it cannot cover the rest timer; set rows labelled Top / Back; weekly set targets match the phase.
+- Stores, export format and import are unchanged; older exports load as before.
+
 ## v11.5.1 (11 Nov 2026)
 
 Fix: on iOS 26 the rest timer and tab bar floated mid-screen over the set rows after the keyboard closed, and the page jumped while typing.
