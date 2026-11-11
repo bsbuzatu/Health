@@ -260,7 +260,7 @@ nav button{font-size:.62rem}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.6 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.6.1 · gym · fast · food</div>
   </header>
 
   <main>
@@ -298,7 +298,7 @@ nav button{font-size:.62rem}
         <div id="exList"></div>
         <div class="card" id="noteCard">
           <h3>Notes</h3>
-          <textarea id="runNote" rows="4" placeholder="Anything about this session: how it felt, dizziness, pain, equipment, sleep…" style="min-height:110px"></textarea>
+          <textarea id="runNote" rows="4" oninput="saveDraft()" placeholder="Anything about this session: how it felt, dizziness, pain, equipment, sleep…" style="min-height:110px"></textarea>
           <div class="muted" style="margin-top:6px;font-size:.8rem">Saved with the workout and included in the export.</div>
         </div>
         <button class="btn primary hidden" id="finishBtn" onclick="finishWorkout()">Finish workout</button>
@@ -841,13 +841,45 @@ const FOODS=[
  ]}
 ];
 
-const BUILD='2026-11-11-v11.6';
+const BUILD='2026-11-11-v11.6.1';
 
 /* ============================================================
    State
    ============================================================ */
 let W=null;                 // antrenamentul curent (sau doar previzualizat)
 let RUNNING=false;          // false = mod consultare, true = sesiune pornita
+/* v11.6.1 \u2014 draft of the running session. Kept in settings/'draft' so a reload, a crash or
+   iOS evicting the app does not lose confirmed sets, typed values or notes. Written at once
+   on every tick, debounced while typing; cleared on Finish and on Cancel; never exported. */
+let DRAFT_T=null, DRAFT_STALE=false, DRAFT_LAST=0, REST_END=0, REST_LBL='';
+function saveDraft(){if(!W||!RUNNING)return;clearTimeout(DRAFT_T);DRAFT_T=setTimeout(saveDraftNow,400)}
+function saveDraftNow(){
+  clearTimeout(DRAFT_T);
+  if(!W||!RUNNING)return Promise.resolve();
+  const n=document.getElementById('runNote');
+  return put('settings',{key:'draft',value:{w:W,note:n?n.value:'',ts:Date.now(),restEnd:REST_END,restLbl:REST_LBL}}).catch(()=>{});
+}
+function clearDraft(){clearTimeout(DRAFT_T);DRAFT_STALE=false;return put('settings',{key:'draft',value:null}).catch(()=>{})}
+async function resumeDraft(){
+  let v=null;
+  try{const d=await get1('settings','draft');v=d&&d.value}catch(e){return false}
+  if(!v||!v.w||!v.w.startTs||!Array.isArray(v.w.exercises)||!v.w.exercises.length)return false;
+  W=v.w;RUNNING=true;DRAFT_LAST=v.ts||W.startTs;DRAFT_STALE=(Date.now()-DRAFT_LAST)>6*3600e3;
+  document.getElementById('sessPick').classList.add('hidden');
+  document.getElementById('sessRun').classList.remove('hidden');
+  document.getElementById('runName').textContent=W.sessionName||W.sessionId||'Workout';
+  document.getElementById('startBar').classList.add('hidden');
+  document.getElementById('finishBtn').classList.remove('hidden');
+  document.getElementById('backBtn').textContent='Cancel';
+  document.getElementById('runNote').value=v.note||'';
+  renderRun();startRunClock();requestWakeLock();
+  const left=Math.round(((v.restEnd||0)-Date.now())/1000);
+  if(left>0)startRest(left,v.restLbl||'Rest');
+  toast(DRAFT_STALE?'Unfinished workout from '+fmtD(W.date)+' restored':'Workout resumed');
+  return true;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveDraftNow()});
+window.addEventListener('pagehide',()=>{saveDraftNow()});
 let wakeLock=null, runTimer=null, restTimer=null, restLeft=0;
 let SUG={};                 // 'i-j' -> {w,r} suggestion shown in the boxes of the running session
 let lastMap={};             // exId -> {date, sets:[]}
@@ -872,7 +904,8 @@ async function boot(){
   renderFoods();renderFast();renderLog();
   await renderStats();
   await renderDiag();
-  go('gym');   // afiseaza imediat build-ul in subtitlu
+  go('gym');
+  await resumeDraft();   // afiseaza imediat build-ul in subtitlu
 }
 
 /* ============================================================
@@ -1225,6 +1258,7 @@ function beginWorkout(){
   startRunClock();
   requestWakeLock();
   toast('Workout started');
+  saveDraftNow();
 }
 
 /* Buton unic: Inapoi (preview) sau Anuleaza (in desfasurare) */
@@ -1299,10 +1333,12 @@ function numVal(v){
 }
 function setVal(i,j,k,v){
   W.exercises[i].sets[j][k]= k==='reps' ? (numVal(v)==null?null:Math.round(numVal(v))) : numVal(v);
+  saveDraft();
 }
 function setWu(i,j,k,v){
   const s=W.exercises[i].wuSets[j];
   s[k]= k==='reps' ? (numVal(v)==null?null:Math.round(numVal(v))) : numVal(v);
+  saveDraft();
 }
 function toggleWu(i,j){
   if(!RUNNING)return;
@@ -1312,6 +1348,7 @@ function toggleWu(i,j){
   row.classList.toggle('ok',s.done);
   row.querySelector('.chk').textContent=s.done?'\u2713':'\u25CB';
   if(s.done)startRest(60,W.exercises[i].name+' (warm-up)');
+  saveDraftNow();
 }
 function toggleSet(i,j){
   if(!RUNNING)return;
@@ -1340,17 +1377,19 @@ function toggleSet(i,j){
   document.getElementById('ex-'+i).classList.toggle('done',W.exercises[i].sets.every(x=>x.done));
   if(s.done)startRest(W.exercises[i].rest,W.exercises[i].name);
   // NB: niciun scrollIntoView. Pagina ramane exact unde e.
+  saveDraftNow();
 }
 
 async function finishWorkout(){
   if(!W||!RUNNING)return;
   const any=W.exercises.some(e=>e.sets.some(s=>s.done));
   if(!any){toast('No sets confirmed');return}
-  W.endTs=Date.now();
+  W.endTs=DRAFT_STALE?DRAFT_LAST:Date.now();   // a session restored long after it stopped ends at its last change
   {const n=(document.getElementById('runNote').value||'').trim();if(n)W.note=n;else delete W.note}
   W.exercises=W.exercises.map(e=>({...e,sets:e.sets.filter(s=>s.done),wuSets:(e.wuSets||[]).filter(s=>s.done)}));  // doar seturile confirmate; incalzirile raman separate de .sets
   await put('workouts',W);
   await saveMetricsForDay(W.date,{workout:W.sessionId,trainingDay:true});
+  await clearDraft();
   stopRest();stopRunClock();releaseWakeLock();
   W=null;RUNNING=false;
   document.getElementById('sessRun').classList.add('hidden');
@@ -1360,7 +1399,7 @@ async function finishWorkout(){
 }
 function abortWorkout(){
   if(!confirm('Cancel workout? Nothing will be saved.'))return;
-  stopRest();stopRunClock();releaseWakeLock();W=null;RUNNING=false;
+  stopRest();stopRunClock();releaseWakeLock();W=null;RUNNING=false;clearDraft();
   document.getElementById('sessRun').classList.add('hidden');
   document.getElementById('sessPick').classList.remove('hidden');
   pageTop();
@@ -1379,7 +1418,7 @@ function stopRunClock(){if(runTimer)clearInterval(runTimer);runTimer=null}
 function pad(n){return String(n).padStart(2,'0')}
 
 function startRest(sec,label){
-  restLeft=sec;
+  restLeft=sec;REST_END=Date.now()+sec*1000;REST_LBL=label||'Rest';saveDraft();
   const box=document.getElementById('rest');
   box.classList.remove('hidden','zero');
   
@@ -1393,9 +1432,9 @@ function startRest(sec,label){
   },1000);
 }
 function paintRest(){document.getElementById('restT').textContent=Math.floor(restLeft/60)+':'+pad(restLeft%60)}
-function addRest(s){restLeft+=s;document.getElementById('rest').classList.remove('zero');
+function addRest(s){restLeft+=s;REST_END=Date.now()+restLeft*1000;saveDraft();document.getElementById('rest').classList.remove('zero');
   if(!restTimer)startRest(restLeft,document.getElementById('restLbl').textContent);paintRest()}
-function stopRest(){if(restTimer)clearInterval(restTimer);restTimer=null;
+function stopRest(){if(restTimer)clearInterval(restTimer);restTimer=null;REST_END=0;saveDraft();
   document.getElementById('rest').classList.add('hidden')}
 
 async function requestWakeLock(){
@@ -1656,7 +1695,7 @@ async function renderDiag(){
 async function exportJSON(){
   const [entries,metrics,workouts,settings,fasts,meals,labs]=await Promise.all([all('entries'),all('metrics'),all('workouts'),all('settings'),all('fasts'),all('meals'),all('labs')]);
   const data={exportedAt:new Date().toISOString(),version:4,app:'healthy-life',user:'Bogdan',
-    settings:Object.fromEntries(settings.map(s=>[s.key,s.value!==undefined?s.value:s])),
+    settings:Object.fromEntries(settings.filter(s=>s.key!=='draft').map(s=>[s.key,s.value!==undefined?s.value:s])),
     exerciseCatalog:Object.fromEntries(Object.entries(EX).map(([k,v])=>[k,v.n])),
     program:SESSIONS, mealPresets:MEALS, workouts, metrics, fasts, meals, labs, entries};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});

@@ -20,6 +20,10 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 ---
 
+## v11.6.1 (11 Nov 2026)
+
+Running session is now saved as a draft (`settings` → `draft`): confirmed sets, typed values, notes and the rest timer survive a reload, a crash or iOS closing the app, and the session resumes on the next open. Cleared on Finish and Cancel; not included in exports.
+
 ## v11.6 (11 Nov 2026)
 
 Recomposition-phase program and faster logging.
