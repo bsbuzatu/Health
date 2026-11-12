@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-10-v11.4.2`
+**Build:** `2026-11-12-v11.8`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -13,12 +13,32 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | Tab | Purpose |
 |---|---|
 | **Gym** | Week plan, next session (A→B→C rotation), run a Full-Body session, Zone 2 timer or manual walk entry |
-| **Fast** | Start / end a fast (16 h target), edit start and end afterwards, 7-day average, history |
+| **Fast** | Start / end a fast (16 h target), resume a fast ended by mistake, edit or delete any fast, add one that was not timed, 7-day figures, full history |
 | **Food** | **Log** a meal by tapping its code (+ optional comment) · **Meals** raw weights for one day of each preset · **Shop** tap the meals you'll buy for, get the aggregated raw-weight list · **List** approved foods |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.8 (12 Nov 2026)
+
+Fast section rebuilt, and the tab bar fixed on iPhone.
+
+**Fast**
+- **Bug:** saving a meal in Food → Log ended a running fast silently, at the time shown in the meal form. A meal logged before eating, or a dinner logged after pressing Start, cut the fast short. Now a saved meal never ends a fast by itself: it asks ("End it at 09:37?"), and for a fast started less than 4 h earlier it offers to move the start to the meal time instead.
+- **Resume it:** a fast that was ended by mistake carries on from its original start.
+- **Edit on the main card:** *Edit last fast* / *Edit start* open the editor in place — no scrolling to History. Date and time are separate fields.
+- **Validation with the reason shown in the editor:** end after start, nothing in the future, no overlap with another fast, 5 min – 72 h.
+- **No junk records:** a fast ended within 5 minutes of its start is not kept; *Discard* removes a running fast. On start-up and after an import, records under 5 minutes, records lying inside a longer fast and duplicate running records are removed.
+- **History:** *+ Add a fast that was not timed*, *Show older*, delete from the editor. Records whose times were typed carry `ed:true` and show "edited".
+- **Import:** an incoming fast that overlaps a stored one is skipped (the stored one wins).
+- The card re-reads the store when the app returns from the background; only the timer is repainted each second, so an open editor is never rebuilt.
+
+**Tab bar**
+- **Bug (iPhone, home-screen app):** the shell height was "the tallest window height ever seen". iOS can report the full screen height first and the real, shorter view afterwards, so the app stayed taller than the screen: the tab bar sat below the edge, its labels were cut off and taps landed on the home indicator. The height now follows the smallest measure the browser reports, re-read after launch and on return from the background; only a drop of more than 28 % (the keyboard) is ignored.
+- Buttons are 64 px high with larger icons and labels; as a home-screen app the bar always keeps at least 30 px clear above the home indicator.
+
+No store, export-format or program change. Export stays JSON v4; fasts may carry `ed`.
 
 ## v11.7 (11 Nov 2026)
 
