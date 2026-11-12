@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-12-v11.8`
+**Build:** `2026-11-12-v11.9`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -14,9 +14,31 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 |---|---|
 | **Gym** | Week plan, next session (A→B→C rotation), run a Full-Body session, Zone 2 timer or manual walk entry |
 | **Fast** | Start / end a fast (16 h target), resume a fast ended by mistake, edit or delete any fast, add one that was not timed, 7-day figures, full history |
-| **Food** | **Log** a meal by tapping its code (+ optional comment) · **Meals** raw weights for one day of each preset · **Shop** tap the meals you'll buy for, get the aggregated raw-weight list · **List** approved foods |
+| **Food** | **Log**: tap a preset meal, its ingredients open with the planned raw weights, save as shown or type your own · **Shop**: tap the meals you will cook, get the summed raw-weight list with tick boxes |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
+
+---
+
+## v11.9 (12 Nov 2026)
+
+Food section rebuilt: two screens, preset meals only.
+
+**Log**
+- One status box for the day (Green / Warn / Red / Off-plan, kcal, protein, carbs · fat · fibre, and one line when fibre, potassium and magnesium are covered), the day's entries, and the meal list. The four tiles, the comment field and the 14-day list are gone; the date field opens any other day.
+- **Tap a meal → its ingredients open** with the planned **raw** weight as the placeholder. *Save* with the boxes empty logs the planned weights; a typed number replaces the planned one for that ingredient; `0` leaves the ingredient out. A batch meal is shown and saved as the **whole cook** (lunch + dinner) in one entry. *How to cook* is folded under the ingredients.
+- Items saved at the planned weight carry `sug:true` in the export; typed weights carry no flag.
+- **Extras:** raw vegetables, apple, berries, nuts, rye bread, and *Off-plan food* (text + rough grams, not counted, marks the day off-plan).
+- Tap a logged entry to see its weights.
+
+**Shop**
+- Tap a meal once for each day you will eat it; the list sums the raw ingredients, rounded up. Tap a line when it is in the basket. *Clear* resets both.
+
+**Meals**
+- Three morning shakes and the omelette; four crock-pot meals (oil added after cooking); ten pan / oven meals, several with a second side (salads, beetroot, eggplant, mushrooms). New ingredients: turkey and chicken thigh, buckwheat, pearl barley, eggplant, beetroot, leek, celery root, pumpkin, passata, chia.
+- Every morning item + one batch cook is audited (56 combinations) to the day's calorie and protein bands with fibre ≥ 30 g, and leaves room for one extra.
+
+**Removed:** the *Meals* and *List* sub-tabs, food-by-food logging. Records saved by earlier builds (`LOG`, `FREE`, old preset codes) are kept and shown as they were. Stores and export format are unchanged.
 
 ---
 

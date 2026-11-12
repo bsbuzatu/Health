@@ -97,6 +97,24 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .light.w{border-color:#6b4a0c;background:#1a1405}.light.w .t{color:var(--amber)}
 .light.r{border-color:#6b1f1f;background:#1a0808}.light.r .t{color:var(--red)}
 .light.o .t{color:var(--muted)}
+.light .s.m{color:var(--muted);font-size:.84rem}
+.light .s.ok{color:var(--green);font-size:.84rem}
+.grp{color:var(--green);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin:16px 0 8px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel2);
+  border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-top:6px;color:var(--txt);font-size:.95rem;font-weight:600;line-height:1.3}
+.pick:active{border-color:var(--green-dim)}
+.pick.on{border-color:var(--green);color:var(--green)}
+.pick b{flex:none;background:var(--green);color:#000;border-radius:999px;padding:2px 9px;font-size:.82rem}
+.prow{display:grid;grid-template-columns:1fr 92px 30px;gap:8px;align-items:center;margin-top:8px}
+.prow .nm{font-size:.95rem;min-width:0}
+.prow input{padding:10px 8px}
+.prow input.q{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.prow input.q::placeholder{color:#7d9478;font-weight:600}
+.prow .u{color:var(--muted);font-size:.8rem}
+.tot{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:.98rem;line-height:1.5}
+.tot b{color:var(--green)}
+.shop{cursor:pointer}
+
 .trend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 /* v11.3: last session's values live ONLY in the placeholder */
 .setrow input.last::placeholder{color:#8fb989;font-weight:700}
@@ -281,7 +299,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.8 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.9 · gym · fast · food</div>
   </header>
 
   <main>
@@ -430,79 +448,40 @@ input[type=date]{color-scheme:dark}
       </div>
     </section>
 
-    <!-- ============ FOOD (v11) ============ -->
+    <!-- ============ FOOD (v11.9: Log · Shop) ============ -->
     <section id="v-foods" class="hidden">
       <div class="subtabs">
         <button id="ft-log"  class="on" onclick="foodTab('log')">Log</button>
-        <button id="ft-cook"           onclick="foodTab('cook')">Meals</button>
-        <button id="ft-shop"           onclick="foodTab('shop')">Shop</button>
-        <button id="ft-list"           onclick="foodTab('list')">List</button>
+        <button id="ft-shop"            onclick="foodTab('shop')">Shop</button>
       </div>
 
       <!-- LOG -->
       <div id="fv-log">
         <div class="card">
           <div class="row" style="justify-content:space-between;margin-bottom:8px">
-            <h3 style="margin:0">Today</h3>
-            <input type="date" id="logDate" style="width:auto;padding:7px 9px;font-size:.9rem" onchange="renderLog()">
+            <h3 style="margin:0" id="logTitle">Today</h3>
+            <input type="date" id="logDate" style="width:auto;padding:7px 9px;font-size:.9rem" onchange="renderLog();mealTotals()">
           </div>
           <div id="dayLight"></div>
-          <div class="kpi" id="dayTot"></div>
-          <div id="dayMeals" style="margin-top:10px"></div>
+          <div id="dayMeals"></div>
         </div>
-        <div class="card">
-          <h3>Add what you ate</h3>
-          <div class="muted" style="margin-bottom:8px">Two entries a day: the morning shake or omelette, then everything that went into the pan for both meals. Pick a food, type the <b>raw</b> amount, and the next row opens by itself.</div>
-          <div><label>Time</label><input type="time" id="logTime"></div>
-          <div id="mealRows" style="margin-top:10px"></div>
-          <div class="muted" style="margin-top:10px" id="mealTot"></div>
-          <label style="margin-top:10px">Comment</label>
-          <textarea id="logCm" placeholder="optional"></textarea>
-          <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save</button>
-        </div>
-        <div class="card">
-          <h3>Last 14 days</h3>
-          <div id="logHist"></div>
-        </div>
-      </div>
-
-      <!-- MEALS -->
-      <div id="fv-cook" class="hidden">
-        <div class="muted" style="margin:0 2px 12px">
-          Raw weights. <b>M1&ndash;M8 = one day</b>: cook the whole amount once, split in two boxes (lunch + early dinner).
-          Shake or omelette + two portions of any batch = 2,140&ndash;2,240 kcal, 159&ndash;183 g protein. Weekends follow the same rule: omelette + one batch. No dairy foods, no chickpeas. Weigh the oil.
-        </div>
-        <div id="mealCards"></div>
+        <div class="card" id="pickCard"><div id="pick"></div></div>
       </div>
 
       <!-- SHOP -->
-      <div id="fv-shop">
+      <div id="fv-shop" class="hidden">
         <div class="card">
-          <h3>Buying for</h3>
-          <div class="muted" style="margin-bottom:8px">Tap a meal for one day of it (a batch = 2 portions). Tap again for 2, 3 days; a fourth tap clears it. The list shows only what the selected meals need.</div>
-          <div class="chips" id="shopPlan"></div>
+          <h3>What will you cook?</h3>
+          <div class="muted">Tap a meal once for each day you will eat it.</div>
+          <div id="shopPlan"></div>
         </div>
         <div class="card">
           <div class="row" style="justify-content:space-between">
-            <h3 style="margin:0">Shopping list</h3>
+            <h3 style="margin:0">To buy</h3>
             <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="shopReset()">Clear</button>
           </div>
-          <div class="muted" style="font-size:.8rem;margin-top:4px">Raw grams, rounded up to 50 g. Tap a quantity to type what the pack actually weighs.</div>
           <div id="shopList" style="margin-top:6px"></div>
         </div>
-      </div>
-
-      <!-- LIST -->
-      <div id="fv-list" class="hidden">
-        <div class="card">
-          <h3>Inclusion criteria</h3>
-          <div class="muted">
-            High protein density, low glycaemic load or high fibre, mostly unsaturated fat.
-            Zero alcohol, zero added sugar / soft drinks, no refined seed oil, no pastry. Values per 100 g raw unless stated.
-            Liver-first: fructose only as whole fruit, max 2 portions a day, never as juice.
-          </div>
-        </div>
-        <div class="card"><div id="foodList"></div></div>
       </div>
     </section>
 
@@ -777,87 +756,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const FOODS=[
- {g:'Animal protein',i:[
-  ['Chicken breast',165,31,0,3.6,'Staple. Boiled / dry pan.'],
-  ['Turkey breast',157,29,0,2.1,''],
-  ['Tuna in brine',116,26,0,1,'Drained.'],
-  ['Salmon / trout',180,22,0,10,'EPA/DHA. 2\u00D7 / week \u2014 the oily fish of choice.'],
-  ['Mackerel',205,19,0,14,'High omega-3 but purine-rich: max 1\u00D7 / week (uric acid).'],
-  ['Sardines with bones',208,25,0,11,'Purine-rich: max 1\u00D7 / week (uric acid).'],
-  ['Cod / hake',82,18,0,0.7,'Max protein density.'],
-  ['Lean beef (rump)',150,26,0,5,'Max 1\u00D7 / week \u2014 heme iron (ferritin).'],
-  ['Pork tenderloin',120,21,0,3.5,'Lean; the default red-meat slot.'],
-  ['Whole eggs',143,13,1.1,10,'Up to ~8 yolks / week (LDL history); whites free.'],
-  ['Egg whites',52,11,0.7,0.2,''],
-  ['Whey isolate',380,88,4,1,'Post-workout or morning shake.']
- ]},
- {g:'Plant protein',i:[
-  ['Lentils (dry)',352,25,63,1,'11 g fiber.'],
-  ['Firm tofu',144,17,3,9,''],
-  ['Edamame',122,11,10,5,'']
- ]},
- {g:'Carbs',i:[
-  ['Whole oats',389,17,66,7,'Beta-glucan (LDL). In the morning shake.'],
-  ['Bulgur',342,12,76,1.3,''],
-  ['Whole-wheat pasta',348,13,67,2.5,''],
-  ['Brown rice',362,7.5,76,2.7,''],
-  ['Quinoa',368,14,64,6,''],
-  ['Sweet potato',86,1.6,20,0.1,''],
-  ['White potato, cooled',77,2,17,0.1,'Cooled = resistant starch.'],
-  ['Buckwheat',343,13,72,3.4,''],
-  ['Whole rye bread',259,9,48,3.3,'2 slices with the weekend omelette.']
- ]},
- {g:'Fats',i:[
-  ['Extra-virgin olive oil',884,0,0,100,'Raw. 1\u20132 tbsp.'],
-  ['Avocado',160,2,9,15,''],
-  ['Almonds',579,21,22,50,'30 g / day.'],
-  ['Walnuts',654,15,14,65,'ALA. 30 g / day.'],
-  ['Ground flaxseed',534,18,29,42,'Ground, otherwise useless.'],
-  ['Chia seeds',486,17,42,31,'']
- ]},
- {g:'Vegetables (unlimited)',i:[
-  ['Broccoli',34,2.8,7,0.4,'Sulforaphane.'],
-  ['Spinach',23,2.9,3.6,0.4,'Nitrates, folate.'],
-  ['Kale',49,4.3,9,0.9,'High K1.'],
-  ['Cauliflower',25,1.9,5,0.3,''],
-  ['Red bell pepper',31,1,6,0.3,''],
-  ['Zucchini',17,1.2,3.1,0.3,''],
-  ['Asparagus',20,2.2,3.9,0.1,''],
-  ['Tomatoes',18,0.9,3.9,0.2,''],
-  ['Onion / garlic',40,1.1,9,0.1,'']
- ]},
- {g:'Fruit',i:[
-  ['Blueberries',57,0.7,14,0.3,'Anthocyanins.'],
-  ['Raspberries',52,1.2,12,0.7,'6.5 g fiber.'],
-  ['Strawberries',32,0.7,7.7,0.3,''],
-  ['Apple with skin',52,0.3,14,0.2,'Pectin.'],
-  ['Kiwi',61,1.1,15,0.5,''],
-  ['Banana',89,1.1,23,0.3,'In the morning shake only.'],
-  ['Grapes (Victoria/Mero)',69,0.7,18,0.2,'Max 250 g/day, with protein, lunch, never after 18:00.']
- ]},
- {g:'Drinks & seasoning',i:[
-  ['Water',0,0,0,0,'3 l / day.'],
-  ['Black coffee',2,0.1,0,0,'Max 400 mg caffeine, none after 14:00.'],
-  ['Green tea',1,0,0,0,''],
-  ['Apple cider vinegar',22,0,0.9,0,'Before carb meals.'],
-  ['Herbs / spices',0,0,0,0,'Turmeric, ginger, cinnamon, pepper.']
- ]},
- {g:'Forbidden',i:[
-  ['Alcohol',0,0,0,0,'Zero. Direct driver of liver fat.'],
-  ['Milk, yogurt, cheese',0,0,0,0,'Your choice: no dairy foods. Whey isolate stays.'],
-  ['Chickpeas, beans',0,0,0,0,'Bloating. Red lentils are fine.'],
-  ['Organ meat, anchovies',0,0,0,0,'Highest purine load (uric acid).'],
-  ['Iron supplements, iron-fortified foods',0,0,0,0,'Ferritin is high.'],
-  ['Fruit juice / smoothies / honey',0,0,0,0,'Fructose load goes straight to the liver.'],
-  ['Added sugar / soft drinks',0,0,0,0,''],
-  ['Refined seed oils',0,0,0,0,'Sunflower, corn, soy.'],
-  ['Deli meats / processed meat',0,0,0,0,''],
-  ['White flour / pastry',0,0,0,0,'']
- ]}
-];
-
-const BUILD='2026-11-12-v11.8';
+const BUILD='2026-11-12-v11.9';
 
 /* ============================================================
    State
@@ -918,7 +817,7 @@ async function boot(){
   initStatsForm();initLabForm();initLogForm();
   let fastFixed=0;try{fastFixed=await fastSanitize()}catch(e){}
   await Promise.all([loadFasts(),loadMeals(),loadLabs(),loadShop()]);
-  renderFoods();renderFast();renderLog();
+  renderFast();renderLog();
   await renderStats();
   await renderDiag();
   go('gym');
@@ -930,7 +829,7 @@ async function boot(){
    Navigare
    ============================================================ */
 const TITLES={gym:['Gym','Full-Body A\u2192B\u2192C + Zone 2'],fast:['Fast','16 : 8'],stats:['Stats','Body & health'],
-  foods:['Food','Log \u00B7 Meals \u00B7 Shop \u00B7 List'],set:['Settings','Targets & data']};
+  foods:['Food','Log \u00B7 Shop'],set:['Settings','Targets & data']};
 function go(v){
   ['gym','fast','stats','foods','set'].forEach(k=>{
     document.getElementById('v-'+k).classList.toggle('hidden',k!==v);
@@ -1698,19 +1597,6 @@ async function drawVolume(){
 /* ============================================================
    Alimente
    ============================================================ */
-function renderFoods(){
-  document.getElementById('foodList').innerHTML=FOODS.map(gr=>{
-    const forbidden=gr.g==='Forbidden';
-    const items=gr.i.map(f=>{
-      const [n,kc,p,cb,ft,note]=f;
-      const mac=forbidden?'<span style="color:var(--red)">\u2715</span>':
-        `<b>${p}P</b> \u00B7 ${cb}C \u00B7 ${ft}F<br>${kc} kcal`;
-      return `<div class="fi"><div><div class="nm">${n}</div>${note?`<div class="nt">${note}</div>`:''}</div>
-        <div class="mac">${mac}</div></div>`;
-    }).join('');
-    return `<div class="fgrp"><div class="hd" ${forbidden?'style="color:var(--red)"':''}>${gr.g}</div>${items}</div>`;
-  }).join('');
-}
 
 /* ============================================================
    Setari
@@ -2100,217 +1986,275 @@ function renderFastHist(){
    v11 — FOOD: ingredients (per 100 g raw, or per piece) and meal presets
    ============================================================ */
 const ING={
-  chicken:  {n:'Chicken breast',        kc:165,p:31,  c:0,  f:3.6, a:'Meat & fish'},
-  turkey:   {n:'Turkey breast',         kc:157,p:29,  c:0,  f:2.1, a:'Meat & fish'},
-  beef:     {n:'Lean beef (rump / pulpă)',kc:150,p:26, c:0,  f:5,   a:'Meat & fish'},
-  salmon:   {n:'Salmon fillet',         kc:200,p:20,  c:0,  f:13,  a:'Meat & fish'},
-  trout:    {n:'Trout fillet (păstrăv)', kc:148,p:21,  c:0,  f:6.6, a:'Meat & fish'},
-  pork:     {n:'Pork tenderloin (mușchiuleț)',kc:120,p:21,c:0,f:3.5,a:'Meat & fish'},
-  cod:      {n:'Cod / hake fillet',     kc:82, p:18,  c:0,  f:0.7, a:'Meat & fish'},
-  tuna:     {n:'Tuna in brine (drained)',kc:116,p:26, c:0,  f:1,   a:'Pantry'},
-  egg:      {n:'Whole eggs',            kc:79, p:7,   c:0.6,f:5.5, a:'Dairy & eggs', u:'pcs'},
-  eggwhite: {n:'Egg whites',            kc:52, p:11,  c:0.7,f:0.2, a:'Dairy & eggs'},
+  /* per 100 g raw (or per piece for u:'pcs'): kc, p, c, f  +  m:[fibre g, potassium mg, magnesium mg, calcium mg]
+     (standard food-composition values, rounded; used for the day's fibre / mineral line) */
+  chicken:  {n:'Chicken breast',        kc:165,p:31,  c:0,  f:3.6, a:'Meat & fish', m:[0,334,28,5]},
+  chthigh:  {n:'Chicken thigh, boneless skinless',kc:121,p:19.7,c:0,f:4.1,a:'Meat & fish', m:[0,242,23,9]},
+  turkey:   {n:'Turkey breast',         kc:157,p:29,  c:0,  f:2.1, a:'Meat & fish', m:[0,290,28,11]},
+  tkthigh:  {n:'Turkey thigh, boneless skinless',kc:120,p:20,c:0,f:4.3,a:'Meat & fish', m:[0,280,24,12]},
+  beef:     {n:'Lean beef (rump / pulpă)',kc:150,p:26, c:0,  f:5,   a:'Meat & fish', m:[0,330,22,12]},
+  salmon:   {n:'Salmon fillet',         kc:200,p:20,  c:0,  f:13,  a:'Meat & fish', m:[0,360,27,12]},
+  trout:    {n:'Trout fillet (păstrăv)', kc:148,p:21,  c:0,  f:6.6, a:'Meat & fish', m:[0,377,25,25]},
+  pork:     {n:'Pork tenderloin (mușchiuleț)',kc:120,p:21,c:0,f:3.5,a:'Meat & fish', m:[0,400,27,5]},
+  cod:      {n:'Cod / hake fillet',     kc:82, p:18,  c:0,  f:0.7, a:'Meat & fish', m:[0,413,32,16]},
+  tuna:     {n:'Tuna in brine (drained)',kc:116,p:26, c:0,  f:1,   a:'Pantry', m:[0,237,27,11]},
+  egg:      {n:'Whole eggs',            kc:79, p:7,   c:0.6,f:5.5, a:'Dairy & eggs', u:'pcs', m:[0,76,7,31]},
+  eggwhite: {n:'Egg whites',            kc:52, p:11,  c:0.7,f:0.2, a:'Dairy & eggs', m:[0,163,11,7]},
   yog:      {n:'Greek yogurt 2 % (or skyr)',kc:59,p:10, c:3.6,f:2,   a:'Dairy & eggs'},
   parm:     {n:'Parmesan, grated',      kc:392,p:33,  c:0,  f:29,  a:'Dairy & eggs'},
   skyr:     {n:'Skyr natural (0–0.2 % fat)',kc:63,p:11,  c:4,  f:0.2, a:'Dairy & eggs'},
-  whey:     {n:'Whey isolate',          kc:380,p:88,  c:4,  f:1,   a:'Staples'},
-  creatine: {n:'Creatine monohydrate',  kc:0,  p:0,   c:0,  f:0,   a:'Staples'},
-  psyllium: {n:'Psyllium husk',         kc:200,p:2,   c:4,  f:0,   a:'Staples'},
-  walnut:   {n:'Walnuts / almonds',     kc:640,p:16,  c:16, f:60,  a:'Staples'},
-  banana:   {n:'Banana',                kc:89, p:1.1, c:23, f:0.3, a:'Produce'},
-  rice:     {n:'Brown rice (dry)',      kc:362,p:7.5, c:76, f:2.7, a:'Dry goods'},
-  lentil:   {n:'Red lentils (dry)',     kc:352,p:25,  c:63, f:1,   a:'Dry goods'},
-  quinoa:   {n:'Quinoa (dry)',          kc:368,p:14,  c:64, f:6,   a:'Dry goods'},
-  bulgur:   {n:'Bulgur (dry)',          kc:342,p:12,  c:76, f:1.3, a:'Dry goods'},
-  wwpasta:  {n:'Whole-wheat pasta (dry)',kc:348,p:13, c:67, f:2.5, a:'Dry goods'},
+  whey:     {n:'Whey isolate',          kc:380,p:88,  c:4,  f:1,   a:'Staples', m:[0,500,80,450]},
+  creatine: {n:'Creatine monohydrate',  kc:0,  p:0,   c:0,  f:0,   a:'Staples', m:[0,0,0,0]},
+  psyllium: {n:'Psyllium husk',         kc:200,p:2,   c:4,  f:0,   a:'Staples', m:[80,0,0,0]},
+  walnut:   {n:'Walnuts / almonds',     kc:640,p:16,  c:16, f:60,  a:'Staples', m:[6.7,441,158,98]},
+  chia:     {n:'Chia seeds',            kc:486,p:17,  c:8,  f:31,  a:'Staples', m:[34,407,335,631]},
+  banana:   {n:'Banana',                kc:89, p:1.1, c:23, f:0.3, a:'Produce', m:[2.6,358,27,5]},
+  rice:     {n:'Brown rice (dry)',      kc:362,p:7.5, c:76, f:2.7, a:'Dry goods', m:[3.5,250,140,20]},
+  lentil:   {n:'Red lentils (dry)',     kc:352,p:25,  c:63, f:1,   a:'Dry goods', m:[11,670,60,48]},
+  quinoa:   {n:'Quinoa (dry)',          kc:368,p:14,  c:64, f:6,   a:'Dry goods', m:[7,563,197,47]},
+  bulgur:   {n:'Bulgur (dry)',          kc:342,p:12,  c:76, f:1.3, a:'Dry goods', m:[12.5,410,164,35]},
+  buckwheat:{n:'Buckwheat (hrișcă, dry)',kc:343,p:13.3,c:71.5,f:3.4,a:'Dry goods', m:[10,460,231,18]},
+  barley:   {n:'Pearl barley (arpacaș, dry)',kc:352,p:9.9,c:77.7,f:1.2,a:'Dry goods', m:[15.6,280,79,29]},
+  wwpasta:  {n:'Whole-wheat pasta (dry)',kc:348,p:13, c:67, f:2.5, a:'Dry goods', m:[8,215,143,40]},
   chickpea: {n:'Chickpeas, canned (drained)',kc:130,p:7.5,c:19,f:2.5,a:'Pantry'},
-  potato:   {n:'Potatoes',              kc:77, p:2,   c:17, f:0.1, a:'Produce'},
-  spotato:  {n:'Sweet potato',          kc:86, p:1.6, c:20, f:0.1, a:'Produce'},
-  rye:      {n:'Whole rye bread (slice 40 g)',kc:104,p:3.6,c:19,f:1.3,a:'Dry goods', u:'pcs'},
-  broccoli: {n:'Broccoli',              kc:34, p:2.8, c:7,  f:0.4, a:'Produce'},
-  gbeans:   {n:'Green beans (fresh/frozen)',kc:31,p:1.8,c:7,  f:0.1, a:'Produce'},
-  olive:    {n:'Olives (pitted)',       kc:145,p:1,   c:4,  f:15,  a:'Pantry'},
-  apple:    {n:'Apple',                 kc:52, p:0.3, c:14, f:0.2, a:'Produce'},
-  berries:  {n:'Berries (fresh/frozen)',kc:45, p:0.8, c:9,  f:0.3, a:'Produce'},
-  kiwi:     {n:'Kiwi',                  kc:61, p:1.1, c:15, f:0.5, a:'Produce'},
-  grapes:   {n:'Grapes',                kc:69, p:0.7, c:18, f:0.2, a:'Produce'},
-  oats:     {n:'Oats (dry)',            kc:379,p:13,  c:67, f:6.5, a:'Dry goods'},
+  potato:   {n:'Potatoes',              kc:77, p:2,   c:17, f:0.1, a:'Produce', m:[2.1,421,23,12]},
+  spotato:  {n:'Sweet potato',          kc:86, p:1.6, c:20, f:0.1, a:'Produce', m:[3,337,25,30]},
+  rye:      {n:'Whole rye bread (slice 40 g)',kc:104,p:3.6,c:19,f:1.3,a:'Dry goods', u:'pcs', m:[3.2,80,20,15]},
+  broccoli: {n:'Broccoli',              kc:34, p:2.8, c:7,  f:0.4, a:'Produce', m:[2.6,316,21,47]},
+  gbeans:   {n:'Green beans (fresh/frozen)',kc:31,p:1.8,c:7,  f:0.1, a:'Produce', m:[2.7,211,25,37]},
+  olive:    {n:'Olives (pitted)',       kc:145,p:1,   c:4,  f:15,  a:'Pantry', m:[3,40,4,60]},
+  apple:    {n:'Apple',                 kc:52, p:0.3, c:14, f:0.2, a:'Produce', m:[2.4,107,5,6]},
+  berries:  {n:'Berries (fresh/frozen)',kc:45, p:0.8, c:9,  f:0.3, a:'Produce', m:[4,120,13,18]},
+  kiwi:     {n:'Kiwi',                  kc:61, p:1.1, c:15, f:0.5, a:'Produce', m:[3,312,17,34]},
+  grapes:   {n:'Grapes',                kc:69, p:0.7, c:18, f:0.2, a:'Produce', m:[0.9,191,7,10]},
+  oats:     {n:'Oats (dry)',            kc:379,p:13,  c:67, f:6.5, a:'Dry goods', m:[10,400,140,54]},
   cottage:  {n:'Cottage cheese / brânză vaci',kc:98,p:11,c:3.4,f:4.3,a:'Dairy & eggs'},
   milk:     {n:'Milk 1.5 %',            kc:46, p:3.4, c:4.8,f:1.5, a:'Dairy & eggs'},
   bread:    {n:'Whole-grain bread',     kc:250,p:9,   c:42, f:3.5, a:'Dry goods'},
-  nuts:     {n:'Mixed nuts',            kc:620,p:18,  c:14, f:56,  a:'Staples'},
-  avocado:  {n:'Avocado',               kc:160,p:2,   c:9,  f:15,  a:'Produce'},
-  carrot:   {n:'Carrot',                kc:41, p:0.9, c:10, f:0.2, a:'Produce'},
-  cabbage:  {n:'Cabbage',               kc:25, p:1.3, c:6,  f:0.1, a:'Produce'},
-  mushroom: {n:'Mushrooms',             kc:22, p:3.1, c:3.3,f:0.3, a:'Produce'},
+  nuts:     {n:'Mixed nuts',            kc:620,p:18,  c:14, f:56,  a:'Staples', m:[7,600,220,110]},
+  avocado:  {n:'Avocado',               kc:160,p:2,   c:9,  f:15,  a:'Produce', m:[6.7,485,29,12]},
+  carrot:   {n:'Carrot',                kc:41, p:0.9, c:10, f:0.2, a:'Produce', m:[2.8,320,12,33]},
+  cabbage:  {n:'Cabbage',               kc:25, p:1.3, c:6,  f:0.1, a:'Produce', m:[2.5,170,12,40]},
+  mushroom: {n:'Mushrooms',             kc:22, p:3.1, c:3.3,f:0.3, a:'Produce', m:[1,318,9,3]},
+  eggplant: {n:'Eggplant (vinete)',     kc:25, p:1,   c:6,  f:0.2, a:'Produce', m:[3,229,14,9]},
+  beet:     {n:'Beetroot, cooked (vacuum pack)',kc:44,p:1.7,c:10,f:0.2,a:'Produce', m:[2,305,23,16]},
+  leek:     {n:'Leek',                  kc:61, p:1.5, c:14, f:0.3, a:'Produce', m:[1.8,180,28,59]},
+  celeriac: {n:'Celery root (țelină)',  kc:42, p:1.5, c:9.2,f:0.3, a:'Produce', m:[1.8,300,20,43]},
+  pumpkin:  {n:'Pumpkin / butternut (dovleac)',kc:45,p:1,c:11.7,f:0.1,a:'Produce', m:[2,352,34,48]},
+  passata:  {n:'Tomato passata (no added sugar)',kc:28,p:1.4,c:5,f:0.2,a:'Pantry', m:[1.4,290,12,15]},
   cheese:   {n:'Cheese, hard (telemea/cașcaval)',kc:330,p:22,c:1,f:26,a:'Dairy & eggs'},
   beans:    {n:'White beans, cooked',   kc:139,p:9.7, c:25, f:0.4, a:'Pantry'},
-  shrimp:   {n:'Shrimp / seafood',      kc:85, p:20,  c:0,  f:0.5, a:'Meat & fish'},
+  shrimp:   {n:'Shrimp / seafood',      kc:85, p:20,  c:0,  f:0.5, a:'Meat & fish', m:[0,260,35,55]},
   honeyno:  {n:'Sugar / honey (avoid)', kc:380,p:0,   c:95, f:0,   a:'Pantry'},
-  spinach:  {n:'Spinach',               kc:23, p:2.9, c:3.6,f:0.4, a:'Produce'},
-  zucchini: {n:'Zucchini',              kc:17, p:1.2, c:3.1,f:0.3, a:'Produce'},
-  pepper:   {n:'Red bell pepper',       kc:31, p:1,   c:6,  f:0.3, a:'Produce'},
-  onion:    {n:'Onion',                 kc:40, p:1.1, c:9,  f:0.1, a:'Produce'},
-  tomato:   {n:'Tomatoes',              kc:18, p:0.9, c:3.9,f:0.2, a:'Produce'},
-  cucumber: {n:'Cucumber',              kc:15, p:0.7, c:3.6,f:0.1, a:'Produce'},
-  lettuce:  {n:'Lettuce / mixed leaves',kc:15, p:1.4, c:2.9,f:0.2, a:'Produce'},
-  lemon:    {n:'Lemon',                 kc:29, p:1.1, c:9,  f:0.3, a:'Produce', u:'pcs'},
-  garlic:   {n:'Garlic (cloves)',       kc:4,  p:0.2, c:1,  f:0,   a:'Produce', u:'pcs'},
-  oil:      {n:'Extra-virgin olive oil',kc:884,p:0,   c:0,  f:100, a:'Pantry'},
-  acv:      {n:'Apple cider vinegar',   kc:22, p:0,   c:0.9,f:0,   a:'Pantry'}
+  spinach:  {n:'Spinach',               kc:23, p:2.9, c:3.6,f:0.4, a:'Produce', m:[2.2,558,79,99]},
+  zucchini: {n:'Zucchini',              kc:17, p:1.2, c:3.1,f:0.3, a:'Produce', m:[1,261,18,16]},
+  pepper:   {n:'Red bell pepper',       kc:31, p:1,   c:6,  f:0.3, a:'Produce', m:[2.1,211,12,7]},
+  onion:    {n:'Onion',                 kc:40, p:1.1, c:9,  f:0.1, a:'Produce', m:[1.7,146,10,23]},
+  tomato:   {n:'Tomatoes',              kc:18, p:0.9, c:3.9,f:0.2, a:'Produce', m:[1.2,237,11,10]},
+  cucumber: {n:'Cucumber',              kc:15, p:0.7, c:3.6,f:0.1, a:'Produce', m:[0.5,147,13,16]},
+  lettuce:  {n:'Lettuce / mixed leaves',kc:15, p:1.4, c:2.9,f:0.2, a:'Produce', m:[1.3,194,13,36]},
+  lemon:    {n:'Lemon',                 kc:29, p:1.1, c:9,  f:0.3, a:'Produce', u:'pcs', m:[1.6,80,5,15]},
+  garlic:   {n:'Garlic (cloves)',       kc:4,  p:0.2, c:1,  f:0,   a:'Produce', u:'pcs', m:[0.1,12,1,5]},
+  oil:      {n:'Extra-virgin olive oil',kc:884,p:0,   c:0,  f:100, a:'Pantry', m:[0,0,0,0]},
+  acv:      {n:'Apple cider vinegar',   kc:22, p:0,   c:0.9,f:0,   a:'Pantry', m:[0,0,0,0]}
 };
-/* v11.5: not on the allowed list (dairy foods, chickpeas, beans, sugar). The keys stay so that
-   older log entries still resolve; they are not offered when adding to a meal. */
-const OFF_LIST=new Set(['yog','parm','skyr','cottage','milk','cheese','chickpea','beans','honeyno','bread']);
-/* ing = [key, amount per ONE portion] (g, or pieces for u:'pcs'). Batch meals are cooked ×2. */
+/* ing = [key, amount per ONE portion] (g, or pieces for u:'pcs').
+   kind 'batch' is cooked and logged as the whole cook = 2 portions (lunch + dinner).
+   v11.9 — every morning item + one batch cook is audited to 2,050–2,250 kcal and 155–185 g protein,
+   and leaves room for one extra (fruit, nuts or a rye slice) inside the Green band. */
 const MEALS=[
-  /* v11.5 — no dairy foods (whey isolate stays), smaller batch portions, bigger breakfast.
-     Every morning item + 2 portions of any batch is audited to 2,050–2,250 kcal and 155–185 g protein. */
-  {code:'SHK', kind:'shake', name:'Morning shake (blender)', when:'Mon–Fri, after the 16 h',
+  {code:'SHK', kind:'shake', name:'Oat-banana shake',
    ing:[['whey',40],['oats',60],['banana',120],['walnut',15],['psyllium',10],['creatine',5]],
    steps:['Blender: 400 ml water, oats first (10 s), then whey, banana, walnuts, creatine.','Psyllium last, blend 5 s and drink at once — it thickens.']},
-  {code:'OML', kind:'eggs',  name:'Weekend omelette + rye + berries', when:'Sat / Sun first meal — same daily rules as weekdays',
+  {code:'SHW', kind:'shake', name:'Whey with walnuts and oats',
+   ing:[['whey',42],['oats',70],['walnut',25],['psyllium',10],['creatine',5]],
+   steps:['Blender: 400 ml water, oats first (10 s), then whey, walnuts, creatine.','Psyllium last, blend 5 s and drink at once.']},
+  {code:'SHB', kind:'shake', name:'Berry-chia shake',
+   ing:[['whey',40],['oats',60],['berries',150],['walnut',15],['chia',10],['psyllium',10],['creatine',5]],
+   steps:['Blender: 400 ml water, oats first (10 s), then whey, frozen berries, walnuts, chia, creatine.','Psyllium last, blend 5 s and drink at once.']},
+  {code:'OML', kind:'eggs',  name:'Omelette · rye · berries',
    ing:[['egg',2],['eggwhite',200],['spinach',80],['tomato',100],['pepper',80],['oil',5],['rye',2],['berries',100],['psyllium',10]],
    steps:['Sauté the vegetables in the oil 3 min (non-stick pan).','Add eggs + whites, salt, pepper; cook on low until just set.','Two slices of whole rye bread, berries on the side. Psyllium in a glass of water.']},
-  {code:'M1',  kind:'batch', name:'Chicken · brown rice · green beans', when:'Core batch',
-   ing:[['chicken',180],['rice',85],['gbeans',200],['oil',12],['lemon',0.5],['garlic',2]],
-   steps:['Rice: rinse, 1 : 2 water, lid on, 35 min.','Chicken: salt, pepper, paprika; dry pan or oven 200 °C 20–25 min.','Green beans: steam or boil 6–8 min (broccoli instead if it sits well); dress with the oil, lemon, crushed garlic.','Split into 2 boxes: lunch and dinner.']},
-  {code:'M2',  kind:'batch', name:'Trout (or salmon) · potatoes · salad', when:'2× / week — omega-3',
-   ing:[['trout',230],['potato',400],['lettuce',60],['tomato',100],['cucumber',100],['oil',12],['acv',10]],
-   steps:['Potatoes: boil in skin 20 min, cool in the fridge (resistant starch).','Trout: oven 200 °C 12–15 min, lemon, dill. With salmon use 190 g.','Salad dressed with the oil + vinegar; keep dressing separate for the dinner box.']},
-  {code:'M3',  kind:'batch', name:'Turkey · bulgur · roasted vegetables', when:'Core batch — fibre',
-   ing:[['turkey',180],['bulgur',85],['zucchini',150],['pepper',150],['onion',40],['oil',14],['garlic',2]],
+
+  /* ---- crock-pot: everything raw into the pot, the olive oil goes in AFTER cooking ---- */
+  {code:'C1',  kind:'batch', grp:'crock', name:'Turkey · bulgur · zucchini & pepper',
+   ing:[['tkthigh',240],['bulgur',70],['zucchini',200],['pepper',120],['onion',40],['passata',100],['garlic',2],['oil',10],['cucumber',100]],
+   steps:['Pot: turkey in chunks, zucchini, pepper, onion, garlic, passata, 150 ml water, salt, paprika. Low 6 h or high 3 h.','Bulgur in for the last 30 min (add 150 ml hot water), lid on.','Stir the olive oil in after cooking. Cucumber raw on the side.','Split into 2 boxes.']},
+  {code:'C2',  kind:'batch', grp:'crock', name:'Chicken · barley · root vegetables · beet salad',
+   ing:[['chthigh',250],['barley',55],['carrot',120],['celeriac',80],['leek',50],['garlic',2],['oil',10],['beet',100],['lemon',0.5]],
+   steps:['Pot: chicken thighs, rinsed barley, carrot, celery root, leek, garlic, 500 ml water, salt, bay leaf, thyme. Low 6–7 h or high 3–4 h.','Stir half of the oil in after cooking.','Beet salad: sliced cooked beetroot, the rest of the oil, lemon, a little grated horseradish if you like.','Split into 2 boxes.']},
+  {code:'C3',  kind:'batch', grp:'crock', name:'Pork tenderloin stew · potatoes · tomato salad',
+   ing:[['pork',260],['potato',270],['carrot',100],['onion',50],['passata',150],['garlic',2],['oil',11],['tomato',120],['cucumber',100]],
+   steps:['Pot: pork in 3 cm cubes, potatoes in chunks, carrot, onion, garlic, passata, 100 ml water, salt, paprika, bay leaf. Low 5–6 h or high 3 h.','Stir most of the oil in after cooking.','Tomato-cucumber salad with the rest of the oil.','Split into 2 boxes.']},
+  {code:'C4',  kind:'batch', grp:'crock', name:'Chicken · red lentils · pumpkin · spinach',
+   ing:[['chicken',140],['lentil',60],['pumpkin',200],['spinach',100],['onion',40],['passata',100],['garlic',2],['oil',15],['lemon',0.5]],
+   steps:['Pot: chicken in chunks, rinsed lentils, pumpkin cubes, onion, garlic, passata, 350 ml water, salt, cumin, turmeric. Low 5–6 h or high 3 h.','Spinach in for the last 15 min.','Stir the oil and lemon in after cooking.','Split into 2 boxes. First time: check how the lentils sit with you.']},
+
+  /* ---- pan & oven ---- */
+  {code:'M1',  kind:'batch', grp:'pan', name:'Chicken · brown rice · green beans · tomato salad',
+   ing:[['chicken',170],['rice',72],['gbeans',200],['tomato',100],['cucumber',100],['oil',11],['lemon',0.5],['garlic',2]],
+   steps:['Rice: rinse, 1 : 2 water, lid on, 35 min.','Chicken: salt, pepper, paprika; dry pan or oven 200 °C 20–25 min.','Green beans: steam or boil 6–8 min; dress with half the oil, lemon, crushed garlic.','Tomato-cucumber salad with the rest of the oil. Split into 2 boxes.']},
+  {code:'M2',  kind:'batch', grp:'pan', name:'Trout (or salmon) · potatoes · salad',
+   ing:[['trout',230],['potato',360],['lettuce',60],['tomato',100],['cucumber',100],['oil',11],['acv',10]],
+   steps:['Potatoes: boil in skin 20 min, cool in the fridge (resistant starch).','Trout: oven 200 °C 12–15 min, lemon, dill. With salmon use 190 g per portion (380 g for the cook).','Salad dressed with the oil + vinegar; keep the dressing separate for the dinner box.']},
+  {code:'M3',  kind:'batch', grp:'pan', name:'Turkey · bulgur · roasted vegetables',
+   ing:[['turkey',180],['bulgur',80],['zucchini',150],['pepper',150],['onion',40],['oil',12],['garlic',2]],
    steps:['Bulgur: 1 : 2 boiling water, lid on, off the heat 15 min.','Vegetables in chunks, oil, salt; oven 210 °C 25 min, turkey strips on the same tray for the last 15 min.','Split into 2 boxes.']},
-  {code:'M4',  kind:'batch', name:'Pork tenderloin · sweet potato · salad', when:'1–2× / week',
-   ing:[['pork',250],['spotato',320],['tomato',150],['cucumber',100],['onion',30],['oil',17],['lemon',0.5]],
-   steps:['Sweet potato in wedges, 8 g of the oil, oven 210 °C 30 min.','Tenderloin in 2 cm medallions, hot pan 2–3 min a side, rest 5 min.','Salad with the rest of the oil and lemon.','Lean beef (200 g) may replace the pork once a week at most — heme iron.']},
-  {code:'M5',  kind:'batch', name:'Cod · sweet potato · spinach', when:'Lightest batch',
-   ing:[['cod',300],['spotato',330],['spinach',150],['oil',24],['garlic',2],['lemon',0.5]],
-   steps:['Sweet potato in wedges, 10 g of the oil, oven 210 °C 30 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil.']},
-  {code:'M6',  kind:'batch', name:'Tuna · quinoa · tomato-cucumber · olives (no cooking)', when:'Fallback — 10 minutes, max 2 days / week',
-   ing:[['tuna',190],['quinoa',85],['tomato',150],['cucumber',120],['olive',40],['oil',16],['lemon',0.5]],
-   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min (cook 2–3 days ahead, keeps in the fridge).','Drain tuna, mix everything, lemon, pepper.']},
-  {code:'M7',  kind:'batch', name:'Chicken · whole-wheat pasta · tomato-basil', when:'Variety — Mediterranean',
-   ing:[['chicken',170],['wwpasta',90],['tomato',250],['onion',40],['garlic',2],['oil',15]],
-   steps:['Pasta: boil al dente (whole-wheat, 9–10 min).','Onion + garlic in the oil 3 min, tomato chopped or passata 10 min, basil, salt.','Chicken strips in the sauce 8–10 min; toss with the pasta.']},
-  {code:'M8',  kind:'batch', name:'Frittata · potatoes · peppers', when:'Meat-free day — 1× / week',
-   ing:[['egg',2],['eggwhite',300],['potato',350],['pepper',150],['onion',40],['oil',14]],
+  {code:'M4',  kind:'batch', grp:'pan', name:'Pork tenderloin · sweet potato · salad',
+   ing:[['pork',250],['spotato',300],['tomato',150],['cucumber',100],['onion',30],['oil',15],['lemon',0.5]],
+   steps:['Sweet potato in wedges, half of the oil, oven 210 °C 30 min.','Tenderloin in 2 cm medallions, hot pan 2–3 min a side, rest 5 min.','Salad with the rest of the oil and lemon.','Lean beef (400 g for the cook) may replace the pork once a week at most.']},
+  {code:'M5',  kind:'batch', grp:'pan', name:'Cod · sweet potato · spinach',
+   ing:[['cod',300],['spotato',310],['spinach',150],['oil',22],['garlic',2],['lemon',0.5]],
+   steps:['Sweet potato in wedges, half of the oil, oven 210 °C 30 min.','Cod on the same tray for the last 12 min, lemon.','Spinach wilted 2 min with garlic and the rest of the oil.']},
+  {code:'M7',  kind:'batch', grp:'pan', name:'Chicken · whole-wheat pasta · tomato sauce · green salad',
+   ing:[['chicken',160],['wwpasta',80],['passata',200],['onion',40],['garlic',2],['lettuce',60],['cucumber',100],['oil',13]],
+   steps:['Pasta: boil al dente (whole-wheat, 9–10 min).','Onion + garlic in half of the oil 3 min, passata 10 min, basil, salt.','Chicken strips in the sauce 8–10 min; toss with the pasta.','Lettuce and cucumber with the rest of the oil.']},
+  {code:'M8',  kind:'batch', grp:'pan', name:'Frittata · potatoes · peppers (meat-free)',
+   ing:[['egg',2],['eggwhite',300],['potato',320],['pepper',150],['onion',40],['oil',13]],
    steps:['Potatoes diced, boil 8 min, drain.','Pepper + onion in the oil 5 min, add potatoes, pour eggs + whites, salt; oven 180 °C 20 min or lid on low.','Cut in two.']},
-  {code:'FREE',kind:'free',  name:'Free entry — special occasion', when:'Parties, restaurants, anniversaries: what and roughly how much', ing:[], steps:[]},
+  {code:'M9',  kind:'batch', grp:'pan', name:'Chicken · buckwheat · mushrooms · beet-carrot salad',
+   ing:[['chicken',155],['buckwheat',70],['mushroom',200],['onion',40],['beet',100],['carrot',80],['oil',13],['lemon',0.5]],
+   steps:['Buckwheat: rinse, 1 : 2 water, lid on, 15 min, rest 5 min.','Mushrooms + onion in half of the oil, hot pan 6–8 min, salt, thyme.','Chicken: salt, pepper; dry pan or oven 200 °C 20–25 min.','Salad: grated carrot + sliced beetroot, the rest of the oil, lemon.']},
+  {code:'M10', kind:'batch', grp:'pan', name:'Turkey · potatoes · green beans · eggplant salad',
+   ing:[['turkey',185],['potato',300],['gbeans',150],['eggplant',200],['onion',20],['tomato',100],['oil',13]],
+   steps:['Eggplant: whole in the oven 220 °C 40 min, peel, chop, mix with the onion (fine), salt and most of the oil.','Potatoes: boil in skin 20 min. Green beans: steam 6–8 min.','Turkey: salt, pepper, paprika; pan or oven 200 °C 15–20 min.','Tomato on the side. Split into 2 boxes.']},
+
+  /* ---- no cooking ---- */
+  {code:'M6',  kind:'batch', grp:'pan', name:'Tuna · quinoa · tomato · cucumber · olives (no cooking)',
+   ing:[['tuna',190],['quinoa',80],['tomato',150],['cucumber',120],['olive',40],['oil',15],['lemon',0.5]],
+   steps:['Quinoa: rinse, 1 : 2 water, 15 min, rest 5 min (cook 2–3 days ahead, keeps in the fridge).','Drain the tuna, mix everything, lemon, pepper. At most 2 days a week.']},
+
+  /* ---- extras: one portion, on top of the day's meals ---- */
+  {code:'XV', kind:'extra', name:'Raw vegetables', ing:[['cucumber',150],['pepper',100]], steps:[]},
+  {code:'XA', kind:'extra', name:'Apple',          ing:[['apple',150]], steps:[]},
+  {code:'XB', kind:'extra', name:'Berries',        ing:[['berries',150]], steps:[]},
+  {code:'XN', kind:'extra', name:'Nuts',           ing:[['nuts',15]], steps:[]},
+  {code:'XR', kind:'extra', name:'Rye bread',      ing:[['rye',1]], steps:[]},
+  {code:'OFF',kind:'free',  name:'Off-plan food',  ing:[], steps:[]},
+
   /* legacy codes — kept so older log entries still show their name; not offered any more */
-  {code:'SHKN',kind:'legacy', name:'Morning shake + nuts (old)', when:'', ing:[], steps:[]},
-  {code:'VAR', kind:'legacy', name:'Various (old)', when:'', ing:[], steps:[]},
-  {code:'OTH', kind:'legacy', name:'Estimate (old)', when:'', ing:[], steps:[]}
+  {code:'FREE',kind:'legacy', name:'Free entry (old)', ing:[], steps:[]},
+  {code:'SHKN',kind:'legacy', name:'Morning shake + nuts (old)', ing:[], steps:[]},
+  {code:'VAR', kind:'legacy', name:'Various (old)', ing:[], steps:[]},
+  {code:'OTH', kind:'legacy', name:'Estimate (old)', ing:[], steps:[]}
 ];
 const MEAL_BY=Object.fromEntries(MEALS.map(m=>[m.code,m]));
 function mealMacros(m,portions=1){
   const t={kc:0,p:0,c:0,f:0};
-  m.ing.forEach(([k,q])=>{const g=ING[k];const mult=(g.u==='pcs'?q:q/100)*portions;
+  m.ing.forEach(([k,q])=>{const g=ING[k];if(!g)return;const mult=(g.u==='pcs'?q:q/100)*portions;
     t.kc+=g.kc*mult;t.p+=g.p*mult;t.c+=g.c*mult;t.f+=g.f*mult});
   return {kc:Math.round(t.kc),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f)};
 }
-function ingLine(k,q){const g=ING[k];return g.u==='pcs'?(q%1?q.toFixed(1):q)+' pcs':Math.round(q)+' g'}
+function itemsMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
+function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
+function cookN(m){return m.kind==='batch'?2:1}          // a batch is cooked and logged as 2 portions
+function planQty(m,k,q){return q*cookN(m)}
+function fmtQty(k,q){return unitOf(k)==='pcs'?(q%1?q.toFixed(1):String(q)):String(Math.round(q))}
 
-/* ---- sub-tabs ---- */
+/* ---- sub-tabs: Log · Shop (v11.9) ---- */
 let FOOD_TAB='log';
 function foodTab(t){
+  if(t!=='log'&&t!=='shop')t='log';
   FOOD_TAB=t;
-  ['log','cook','shop','list'].forEach(k=>{
+  ['log','shop'].forEach(k=>{
     document.getElementById('fv-'+k).classList.toggle('hidden',k!==t);
     document.getElementById('ft-'+k).classList.toggle('on',k===t);
   });
-  if(t==='log')renderLog();if(t==='cook')renderMeals();if(t==='shop')renderShop();
+  if(t==='log'){renderLog();renderPick()}
+  if(t==='shop')renderShop();
   pageTop();
 }
 
-/* ---- LOG  (store 'meals': {id,date,time,code,portions,comment,kc,p,c,f}) ---- */
+/* ---- LOG  (store 'meals') ----
+   v11.9 — only preset meals. Tap a meal: its ingredients open with the planned RAW weight as the
+   placeholder (the whole cook = 2 portions for a batch). Save with the boxes empty logs the planned
+   weights; a typed number replaces the planned one for that ingredient; 0 = not used.
+   Record: {date,time,code,portions:1,comment:'',kc,p,c,f,items:[{k,q,sug?}],ts}
+     sug:true  = the planned weight was accepted, not typed
+     code OFF  = off-plan food: free:[{t,q}], no macros, not counted, the day shows OFF-PLAN
+   Older records (code LOG food by food, FREE, and the v11.5 preset codes) keep their content. */
 let MEALS_ALL=[];
 async function loadMeals(){MEALS_ALL=await all('meals')}
-/* v11.7 — the Log is food by food, no presets.
-   Two entries a day are expected: the morning shake/omelette, and the whole cook for both meals.
-   Each row: an allowed food (dropdown) + the raw amount (g, or pieces for eggs, garlic, lemon,
-   rye slices). A completed row opens the next one. The last dropdown option turns the row into
-   a free entry (text + rough grams, no macros) for food that is not on the list.
-   Record: {date,time,code:'LOG',portions:1,comment,kc,p,c,f,items:[{k,q}],free:[{t,q}],ts}.
-   Entries saved with the old preset codes keep their code, name and macros. */
-const OFFPLAN=new Set(['FREE','OTH','VAR']);
-const FOOD_GROUPS=['Meat & fish','Dairy & eggs','Dry goods','Produce','Pantry','Staples'];
-const ALLOWED_KEYS=Object.keys(ING).filter(k=>!OFF_LIST.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n));
-const FOOD_OPTS='<option value="">\u2014 food \u2014</option>'+FOOD_GROUPS.map(g=>{
-    const ks=ALLOWED_KEYS.filter(k=>ING[k].a===g);
-    return ks.length?`<optgroup label="${g.replace('&','&amp;')}">${ks.map(k=>`<option value="${k}">${ING[k].n}${ING[k].u==='pcs'?' (pieces)':''}</option>`).join('')}</optgroup>`:''}).join('')+
-  '<optgroup label="Not on the list"><option value="__free">Other food \u2014 free entry</option></optgroup>';
-function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
+const OFFPLAN=new Set(['FREE','OTH','VAR','OFF']);
+const PICK_GROUPS=[
+  ['Morning',                         m=>m.kind==='shake'||m.kind==='eggs'],
+  ['Crock-pot · lunch + dinner', m=>m.kind==='batch'&&m.grp==='crock'],
+  ['Pan & oven · lunch + dinner',m=>m.kind==='batch'&&m.grp!=='crock'],
+  ['Extras',                          m=>m.kind==='extra'||m.kind==='free']
+];
+let PICK=null;
 function initLogForm(){
   const d=document.getElementById('logDate');if(d&&!d.value)d.value=isoToday();
-  const t=document.getElementById('logTime');if(t){const n=new Date();t.value=pad(n.getHours())+':'+pad(n.getMinutes())}
-  const rows=document.getElementById('mealRows');if(rows){rows.innerHTML='';logAddRow();mealTotals()}
+  PICK=null;renderPick();
 }
-function logAddRow(){
-  const rows=document.getElementById('mealRows'), d=document.createElement('div');d.className='mrow';
-  d.innerHTML=`<select class="vk" onchange="logRowPick(this)">${FOOD_OPTS}</select>
-    <input type="text" class="ft hidden" placeholder="what (e.g. pizza, cake)" oninput="logRowInput()">
-    <input type="text" inputmode="decimal" class="q" placeholder="g" oninput="logRowInput()">
-    <button class="x" onclick="logRowDel(this)" aria-label="Remove row">\u2715</button>`;
-  rows.appendChild(d);
-}
-function logRowPick(sel){
-  const r=sel.parentNode, q=r.querySelector('.q');
-  if(sel.value==='__free'){
-    r.dataset.free='1';sel.classList.add('hidden');
-    const ft=r.querySelector('.ft');ft.classList.remove('hidden');q.placeholder='g';ft.focus();
-  }else q.placeholder=sel.value?unitOf(sel.value):'g';
-  logRowInput();
-}
-function logRowDone(r){
-  const q=numVal(r.querySelector('.q').value.trim());
-  if(r.dataset.free)return r.querySelector('.ft').value.trim()!==''&&q>0;
-  return !!r.querySelector('.vk').value&&q>0;
-}
-/* a completed last row opens the next one; nothing else moves and focus is not touched */
-function logRowInput(){
-  const rs=document.querySelectorAll('#mealRows .mrow');
-  if(!rs.length||logRowDone(rs[rs.length-1]))logAddRow();
+function pickMeal(code){PICK=code&&MEAL_BY[code]?code:null;renderPick();if(PICK){const c=document.getElementById('pickCard');if(c&&c.scrollIntoView)c.scrollIntoView({block:'start'})}}
+function nowHM(){const n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())}
+function renderPick(){
+  const el=document.getElementById('pick');if(!el)return;
+  if(!PICK){
+    el.innerHTML='<h3>Add a meal</h3>'+PICK_GROUPS.map(([title,fn])=>{
+      const ms=MEALS.filter(fn);if(!ms.length)return '';
+      const small=title==='Extras';
+      return `<div class="grp">${title.replace('&','&amp;')}</div>`+(small
+        ?`<div class="chips">${ms.map(m=>`<button class="chip${m.kind==='free'?' oth':''}" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join('')}</div>`
+        :ms.map(m=>`<button class="pick" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join(''));
+    }).join('');
+    return;
+  }
+  const m=MEAL_BY[PICK], head=`<div class="row" style="justify-content:space-between;margin-bottom:6px"><h3 style="margin:0">${esc(m.name)}</h3>
+      <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="pickMeal(null)">Back</button></div>`;
+  const foot=`<div class="prow" style="margin-top:12px"><span class="nm muted">Eaten at</span><input type="time" id="logTime" value="${nowHM()}" style="grid-column:2 / 4"></div>
+    <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save</button>`;
+  if(m.kind==='free'){
+    el.innerHTML=head+`<div class="muted" style="margin-bottom:8px">Anything that is not one of the meals. It is not counted; the day is marked off-plan.</div>
+      <input type="text" id="offT" placeholder="what (e.g. bread with butter)">
+      <div class="prow"><span class="nm muted">Roughly how much</span><input type="text" inputmode="decimal" class="q" id="offQ" placeholder="—"><span class="u">g</span></div>`+foot;
+    return;
+  }
+  el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${m.kind==='batch'?'<b>Whole cook</b> = lunch + dinner. ':''}Raw weights. Leave a box empty to save the weight shown; type your own where it differs.</div>`+
+    m.ing.map(([k,q])=>`<div class="prow" data-k="${k}"><span class="nm">${esc(ING[k].n)}</span>
+      <input type="text" inputmode="decimal" class="q" placeholder="${fmtQty(k,planQty(m,k,q))}" oninput="mealTotals()"><span class="u">${unitOf(k)}</span></div>`).join('')+
+    `<div class="tot" id="mealTot"></div>`+
+    (m.steps&&m.steps.length?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">How to cook</summary>${m.steps.map((st,i)=>`<div class="step"><b>${i+1}</b><span>${st}</span></div>`).join('')}</details>`:'')+foot;
   mealTotals();
 }
-function logRowDel(btn){
-  btn.parentNode.remove();
-  if(!document.querySelectorAll('#mealRows .mrow').length)logAddRow();
-  logRowInput();
-}
-/* only typed values are read */
+/* an empty box = the planned weight (sug); a typed number replaces it; 0 leaves the food out */
 function mealRead(){
-  const items=[],blank=[],free=[];
-  document.querySelectorAll('#mealRows .mrow').forEach(r=>{
-    const raw=r.querySelector('.q').value.trim(), q=raw===''?null:numVal(raw);
-    if(r.dataset.free){const t=r.querySelector('.ft').value.trim();if(t)free.push({t,q:q>0?q:null});return}
-    const k=r.querySelector('.vk').value;
-    if(!k)return;
-    if(q==null||!(q>0)){blank.push(ING[k].n);return}
-    items.push({k,q});
+  const m=MEAL_BY[PICK], items=[], bad=[];
+  if(!m||m.kind==='free')return {items,bad};
+  document.querySelectorAll('#pick .prow[data-k]').forEach(r=>{
+    const k=r.dataset.k, raw=r.querySelector('.q').value.trim();
+    if(raw===''){const q=planQty(m,k,(m.ing.find(x=>x[0]===k)||[k,0])[1]);if(q>0)items.push({k,q,sug:true});return}
+    const q=numVal(raw);
+    if(q==null||q<0){bad.push(ING[k].n);return}
+    if(q>0)items.push({k,q});
   });
-  return {items,blank,free};
+  return {items,bad};
 }
-function itemsMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
 function mealTotals(){
   const el=document.getElementById('mealTot');if(!el)return;
-  const {items,free}=mealRead(), m=itemsMacros(items);
+  const {items,bad}=mealRead(), x=itemsMacros(items);
   const date=(document.getElementById('logDate')||{}).value||isoToday(), day=dayTotals(date);
-  el.innerHTML=(items.length?`This entry: <b style="color:var(--green)">${m.kc} kcal \u00B7 ${m.p} g P</b> \u00B7 ${m.c} g C \u00B7 ${m.f} g F<br>Day after saving: <b>${day.kc+m.kc}</b> / ${TGT.kcal} kcal \u00B7 <b>${day.p+m.p}</b> / ${TGT.prot} g P`:'Nothing entered yet.')+
-    (free.length?'<br>Free entries are not counted \u2014 they are estimated when you send the export.':'');
+  el.innerHTML=bad.length?`<span style="color:var(--amber)">Not a number: ${bad.map(esc).join(', ')}</span>`
+    :`<b>${x.kc} kcal · ${x.p} g protein</b><br><span class="muted">Day after saving: ${day.kc+x.kc} / ${TGT.kcal} kcal · ${day.p+x.p} / ${TGT.prot} g protein</span>`;
 }
 async function saveMeal(){
+  const m=MEAL_BY[PICK];if(!m)return;
   const date=document.getElementById('logDate').value||isoToday();
-  const time=document.getElementById('logTime').value||'';
-  const comment=document.getElementById('logCm').value.trim();
-  const {items,blank,free}=mealRead();
-  if(!items.length&&!free.length){toast('Add at least one food with an amount');return}
-  if(blank.length&&!confirm('No amount typed \u2014 these will not be saved:\n\n'+blank.join('\n')+'\n\nSave the rest?'))return;
-  const rec={date,time,code:'LOG',portions:1,comment,...itemsMacros(items),items,ts:Date.now()};
-  if(free.length)rec.free=free;
+  const time=(document.getElementById('logTime')||{}).value||'';
+  let rec;
+  if(m.kind==='free'){
+    const t=document.getElementById('offT').value.trim(), q=numVal(document.getElementById('offQ').value);
+    if(!t){toast('Type what it was');return}
+    rec={date,time,code:m.code,portions:1,comment:'',kc:0,p:0,c:0,f:0,items:[],free:[{t,q:q>0?q:null}],ts:Date.now()};
+  }else{
+    const {items,bad}=mealRead();
+    if(bad.length){toast('Check the amount: '+bad[0]);return}
+    if(!items.length){toast('Nothing to save');return}
+    rec={date,time,code:m.code,portions:1,comment:'',...itemsMacros(items),items,ts:Date.now()};
+  }
   await put('meals',rec);
-  /* v11.8 — a saved meal never ends a fast by itself (it used to, at the time in the
-     form, which stopped fasts that were still running). It asks, and says what it will do. */
+  /* v11.8 — a saved meal never ends a fast by itself: it asks, and says what it will do. */
   await loadFasts();
   if(FAST_ACTIVE&&date===isoToday()){
     const [hh,mm]=(time||'').split(':').map(Number);const d=new Date();
@@ -2324,13 +2268,10 @@ async function saveMeal(){
       }
     }
   }
-  document.getElementById('logCm').value='';
-  await loadMeals();initLogForm();renderLog();
-  const L=dayLight(date);
-  toast('Saved \u2014 '+L.word);
+  await loadMeals();PICK=null;renderPick();renderLog();
+  toast('Saved — '+dayLight(date).word);
   pageTop();   // the day light is at the top of the Log
 }
-
 async function deleteMeal(id){
   if(!confirm('Delete this entry?'))return;
   await new Promise((res,rej)=>{const q=tx('meals','readwrite').delete(id);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});
@@ -2343,13 +2284,20 @@ function dayTotals(date){
     clean:ms.length>0&&ms.every(m=>!isOff(m)),oth:ms.filter(isOff).length,
     est:ms.some(m=>m.code==='OTH'||m.code==='FREE'||(m.free&&m.free.length))};
 }
+/* fibre (g), potassium and magnesium (mg) of the day, from the logged raw weights */
+function dayMicros(date){
+  const t={fib:0,K:0,Mg:0};
+  MEALS_ALL.filter(m=>m.date===date).forEach(m=>(m.items||[]).forEach(x=>{const g=ING[x.k];if(!g||!g.m)return;
+    const mu=g.u==='pcs'?x.q:x.q/100;t.fib+=g.m[0]*mu;t.K+=g.m[1]*mu;t.Mg+=g.m[2]*mu}));
+  return {fib:Math.round(t.fib),K:Math.round(t.K),Mg:Math.round(t.Mg)};
+}
 function isOff(m){return OFFPLAN.has(m.code)||!!(m.free&&m.free.length)}
-/* v11.7 — day light, judged on the day's running total against the calorie target T:
+/* day light, judged on the day's running total against the calorie target T:
      GREEN  up to T+100      WARN  T+100 … T+200      RED  above T+200
-   A day with a free entry cannot be judged (its calories are not counted) and shows OFF-PLAN,
-   unless the counted part alone is already Warn or Red. Protein and the 1,900 kcal floor are
-   reported next to the light; "too low" is only called once the day is over. */
-const KCAL_FLOOR=1900, PROT_FLOOR=155;
+   A day with off-plan food cannot be judged (its calories are not counted) and shows OFF-PLAN,
+   unless the counted part alone is already Warn or Red. "Too low" (1,900 kcal floor, protein,
+   fat, fibre and minerals) is only called once the day is over. */
+const KCAL_FLOOR=1900, PROT_FLOOR=155, FAT_FLOOR=45, FIB_MIN=30, K_MIN=3500, MG_MIN=420;
 function dayLight(date){
   const t=dayTotals(date), T=TGT.kcal, P=TGT.prot;
   const closed=date<isoToday()||(date===isoToday()&&new Date().getHours()>=19);
@@ -2360,101 +2308,74 @@ function dayLight(date){
   else if(t.est){cls='o';word='OFF-PLAN'}
   const lines=[];
   if(t.n){
-    const d=T-t.kc;
-    lines.push({x:`${t.kc} / ${T} kcal \u00B7 `+(d>=0?d+' left':(-d)+' over')});
-    if(t.est)lines.push({x:'Free entry not counted \u2014 the real total is higher',w:1});
+    const d=T-t.kc, mi=dayMicros(date);
+    lines.push({x:`${t.kc} / ${T} kcal · `+(d>=0?d+' left':(-d)+' over')});
+    if(t.est)lines.push({x:'Off-plan food is not counted — the real total is higher',w:1});
     const pd=P-t.p;
-    lines.push({x:`Protein ${t.p} / ${P} g`+(pd>0?' \u00B7 '+pd+' to go':' \u00B7 reached'),w:closed&&!t.est&&t.p<PROT_FLOOR});
-    if(t.kc<KCAL_FLOOR&&!t.est)lines.push(closed?{x:`Too low: ${KCAL_FLOOR-t.kc} kcal under the ${KCAL_FLOOR} minimum`,w:1}:{x:`${KCAL_FLOOR-t.kc} kcal to the ${KCAL_FLOOR} minimum`});
+    lines.push({x:`Protein ${t.p} / ${P} g`+(pd>0?' · '+pd+' to go':' · reached'),w:closed&&!t.est&&t.p<PROT_FLOOR});
+    lines.push({x:`Carbs ${t.c} g · Fat ${t.f} g · Fibre ${mi.fib} g`,m:1});
+    if(t.kc<KCAL_FLOOR&&!t.est)lines.push(closed?{x:`Too low: ${KCAL_FLOOR-t.kc} kcal under the ${KCAL_FLOOR} minimum`,w:1}:{x:`${KCAL_FLOOR-t.kc} kcal to the ${KCAL_FLOOR} minimum`,m:1});
+    const low=[];if(t.f<FAT_FLOOR)low.push('fat');if(mi.fib<FIB_MIN)low.push('fibre');if(mi.K<K_MIN)low.push('potassium');if(mi.Mg<MG_MIN)low.push('magnesium');
+    if(!low.length)lines.push({x:'Fibre, potassium, magnesium: covered',ok:1});
+    else if(closed&&!t.est)lines.push({x:'Low today: '+low.join(', '),w:1});
   }
   return {cls,word,lines,t};
-}
-function totBox(n,v,tgt,unit,lowIsGood){
-  const over=tgt&&v>tgt*1.05, under=tgt&&v<tgt*0.9;
-  const cls=lowIsGood?(over?'bad':(v>0?'ok':'')):(v>=tgt?'ok':(v>0?'warn':''));
-  return `<div class="k"><div class="n">${n}</div><div class="v ${cls}">${v}<small> / ${tgt} ${unit}</small></div></div>`;
 }
 function renderLog(){
   const dEl=document.getElementById('logDate');if(!dEl)return;
   const date=dEl.value||isoToday();
-  const t=dayTotals(date);
-  const kk=(n,v,sub,cls)=>`<div class="k"><div class="n">${n}</div><div class="v ${cls||''}">${v}<span style="font-size:.7rem;color:var(--muted)"> ${sub}</span></div></div>`;
+  const ttl=document.getElementById('logTitle');if(ttl)ttl.textContent=date===isoToday()?'Today':fmtD(date);
   const L=dayLight(date);
-  document.getElementById('dayLight').innerHTML=`<div class="light ${L.cls}"><div class="t">${L.word}</div>${L.lines.map(l=>`<div class="s${l.w?' w':''}">${l.x}</div>`).join('')}</div>`;
-  const kcCls=t.kc?(L.cls==='r'?'bad':L.cls==='w'?'warn':'ok'):'', pCls=t.p?(t.p>=PROT_FLOOR?'ok':'warn'):'';
-  document.getElementById('dayTot').innerHTML=kk('kcal',t.kc,'/ '+TGT.kcal,kcCls)+kk('Protein',t.p,'/ '+TGT.prot+' g',pCls)+
-    kk('Carbs',t.c,'g'+(t.est?' · free entry not counted':''),'')+kk('Fat',t.f,'g'+(t.f&&t.f<45?' · < 45':''),t.f&&t.f<45&&t.n>=3?'warn':'');
+  document.getElementById('dayLight').innerHTML=`<div class="light ${L.cls}"><div class="t">${L.word}</div>${L.lines.map(l=>`<div class="s${l.w?' w':''}${l.m?' m':''}${l.ok?' ok':''}">${l.x}</div>`).join('')}</div>`;
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  document.getElementById('dayMeals').innerHTML=ms.length?ms.map(m=>`<div class="ml">
-      <div class="code"${m.code==='LOG'?' style="min-width:14px"':''}>${m.code==='LOG'?'\u2022':m.code}</div>
-      <div style="flex:1"><div class="nm">${m.code==='LOG'?'Logged food':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code)}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
-        ${m.items&&m.items.length?`<div class="cm">${m.items.map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(ING[x.k]&&ING[x.k].u==='pcs'?' pcs':' g')).join(' · ')}</div>`:''}
-        ${m.free&&m.free.length?`<div class="cm">${m.free.map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · ')}</div>`:''}
-        ${m.comment?`<div class="cm">${esc(m.comment)}</div>`:''}</div>
-      <div class="mac">${m.code==='FREE'||(m.code==='LOG'&&!(m.items&&m.items.length))?'<span class="muted">not<br>counted</span>':`<b>${m.p||0}P</b><br>${m.kc||0} kcal`}</div>
-      <button class="x" onclick="deleteMeal(${m.id})">✕</button></div>`).join('')
-    :'<div class="muted">Nothing logged for this day.</div>';
-  // history 14 days
-  const days=[];for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(isoOf(d.getTime()))}
-  const hist=days.map(d=>{const x=dayTotals(d);if(!x.n)return '';
-    const dm=MEALS_ALL.filter(m=>m.date===d), nl=dm.filter(m=>m.code==='LOG').length;
-    const codes=dm.filter(m=>m.code!=='LOG').map(m=>m.code).concat(nl?[nl+(nl===1?' entry':' entries')]:[]).join(' · ');
-    const hl=dayLight(d).cls;
-    const kcCls=hl==='r'?'bad':hl==='w'?'warn':'ok', pCls=x.p>=PROT_FLOOR?'ok':'warn';
-    return `<div class="hist" onclick="document.getElementById('logDate').value='${d}';renderLog();pageTop()">
-      <div><div class="d">${fmtD(d)} ${x.clean?'<span class="pill">clean</span>':(x.oth?'<span class="pill" style="color:var(--amber);border-color:#4a3a10">off-plan ×'+x.oth+'</span>':'')}</div><div class="m">${codes}</div></div>
-      <div style="text-align:right"><div class="d ${kcCls}">${x.kc} kcal</div><div class="m ${pCls}">${x.p} P · ${x.c} C · ${x.f} F</div></div></div>`}).join('');
-  document.getElementById('logHist').innerHTML=hist||'<div class="muted">Nothing logged yet.</div>';
+  const nameOf=m=>m.code==='LOG'?'Logged food':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
+  document.getElementById('dayMeals').innerHTML=ms.map(m=>{
+    const det=[(m.items||[]).map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' pcs':' g')).join(' · '),
+               (m.free||[]).map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · '), m.comment?esc(m.comment):''].filter(Boolean).join('<br>');
+    const notCounted=isOff(m)&&!(m.items&&m.items.length)&&!(m.kc>0);
+    return `<div class="ml">
+      <div style="flex:1;min-width:0" onclick="this.querySelector('.cm')&&this.querySelector('.cm').classList.toggle('hidden')">
+        <div class="nm">${esc(nameOf(m))}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
+        ${m.free&&m.free.length?`<div class="cm">${m.free.map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · ')}</div>`:(det?`<div class="cm hidden">${det}</div>`:'')}</div>
+      <div class="mac">${notCounted?'<span class="muted">not counted</span>':`<b>${m.kc||0} kcal</b><br>${m.p||0} g P`}</div>
+      <button class="x" onclick="deleteMeal(${m.id})" aria-label="Delete">✕</button></div>`}).join('');
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
-/* ---- MEALS: everything visible, raw weights for one day (2 portions for M1–M6) ---- */
-function renderMeals(){
-  const el=document.getElementById('mealCards');if(!el)return;
-  el.innerHTML=MEALS.filter(m=>m.ing.length).map(m=>{
-    const n=m.kind==='batch'?2:1, mac=mealMacros(m,1);
-    return `<div class="card">
-      <h3><span style="color:var(--txt)">${m.code}</span> &nbsp;${m.name}</h3>
-      <div class="muted" style="margin-bottom:6px">${m.when} · per portion <b style="color:var(--green)">${mac.kc} kcal · ${mac.p} g P</b>${n===2?' · amounts for the whole day (2 portions)':''}</div>
-      ${m.ing.map(([k,q])=>`<div class="ing"><span>${ING[k].n}</span><span class="q">${ingLine(k,q*n)}</span></div>`).join('')}
-      <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">How to cook</summary>
-        ${m.steps.map((st,i)=>`<div class="step"><b>${i+1}</b><span>${st}</span></div>`).join('')}</details>
-    </div>`}).join('');
-}
-
-/* ---- SHOP (settings 'shop': {plan:{code:n}, qty:{ingKey:grams}}) — v11.4
-   Only the selected meals' raw ingredients, summed. Quantities round up to 50 g (pcs up to whole),
-   and any quantity can be overridden with the real pack weight; overrides are kept until Clear. ---- */
-let SHOP={plan:{},qty:{}};
-async function loadShop(){const s=await get1('settings','shop');if(s&&s.value)SHOP={plan:(s.value.plan||{}),qty:(s.value.qty||{})}}
+/* ---- SHOP (settings 'shop': {plan:{code:days}, got:{ingKey:true}}) — v11.9
+   Tap a meal once per day you will eat it (a batch = one cook = 2 portions). The list is the raw
+   ingredients of the selected meals, summed and rounded up; tap a line when it is in the basket. ---- */
+let SHOP={plan:{},got:{}};
+async function loadShop(){const s=await get1('settings','shop');if(s&&s.value)SHOP={plan:(s.value.plan||{}),got:(s.value.got||{})}}
 async function saveShop(){await put('settings',{key:'shop',value:SHOP})}
-async function shopCycle(code){SHOP.plan[code]=((SHOP.plan[code]||0)+1)%4;await saveShop();renderShop()}
-async function shopReset(){SHOP={plan:{},qty:{}};await saveShop();renderShop()}
-async function shopSetQty(k,v){const n=numVal(v);if(n==null||n<=0)delete SHOP.qty[k];else SHOP.qty[k]=n;await saveShop();renderShop()}
+async function shopCycle(code){SHOP.plan[code]=((SHOP.plan[code]||0)+1)%4;if(!SHOP.plan[code])delete SHOP.plan[code];await saveShop();renderShop()}
+async function shopReset(){SHOP={plan:{},got:{}};await saveShop();renderShop()}
+async function shopTick(k){if(SHOP.got[k])delete SHOP.got[k];else SHOP.got[k]=true;await saveShop();renderShop()}
 function shopNeed(){
   const need={};
-  MEALS.filter(m=>m.kind==='batch'||m.kind==='eggs'||m.kind==='shake').forEach(m=>{
-    const n=(SHOP.plan[m.code]||0)*(m.kind==='batch'?2:1);if(!n)return;
+  MEALS.filter(m=>m.ing.length).forEach(m=>{
+    const n=(SHOP.plan[m.code]||0)*cookN(m);if(!n)return;
     m.ing.forEach(([k,q])=>{need[k]=(need[k]||0)+q*n})});
   return need;
 }
 function renderShop(){
   const pl=document.getElementById('shopPlan');if(!pl)return;
-  const sel=[...MEALS.filter(m=>m.kind==='batch'),...MEALS.filter(m=>m.kind==='eggs'),...MEALS.filter(m=>m.kind==='shake')];
-  const days=sel.reduce((a,m)=>a+(SHOP.plan[m.code]||0),0);
-  pl.innerHTML=sel.map(m=>{const c=SHOP.plan[m.code]||0;
-    return `<button class="chip ${c?'on':''}" onclick="shopCycle('${m.code}')"><span class="c">${m.code}</span>${m.name}${c?' <b>×'+c+'</b>':''}</button>`}).join('')+
-    `<div class="muted" style="margin-top:10px;width:100%">${days?days+' meal-day(s) selected.':'Nothing selected — the list below is empty.'}</div>`;
+  pl.innerHTML=PICK_GROUPS.map(([title,fn])=>{
+    const ms=MEALS.filter(m=>fn(m)&&m.ing.length);if(!ms.length)return '';
+    const small=title==='Extras';
+    const btn=m=>{const c=SHOP.plan[m.code]||0;return small
+      ?`<button class="chip ${c?'on':''}" onclick="shopCycle('${m.code}')">${esc(m.name)}${c?' ×'+c:''}</button>`
+      :`<button class="pick ${c?'on':''}" onclick="shopCycle('${m.code}')"><span>${esc(m.name)}</span>${c?`<b>×${c}</b>`:''}</button>`};
+    return `<div class="grp">${title.replace(' · lunch + dinner','').replace('&','&amp;')}</div>`+(small?`<div class="chips">${ms.map(btn).join('')}</div>`:ms.map(btn).join(''));
+  }).join('');
   const need=shopNeed();
   const aisles=['Meat & fish','Dairy & eggs','Produce','Dry goods','Pantry','Staples'];
   const roundQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return Math.ceil(q);const st=g.a==='Staples'?10:50;return Math.ceil(q/st)*st};
-  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return q+' pcs';return q>=1000?(q/1000).toFixed(q%1000?2:0).replace(/\.?0+$/,'')+' kg':q+' g'};
-  const row=k=>{const g=ING[k],calc=roundQ(k,need[k]),ov=SHOP.qty[k],q=ov!=null?ov:calc;
-    return `<div class="shop"><div class="nm">${g.n}<div class="muted" style="font-size:.74rem">needed ${fmtQ(k,calc)}${ov!=null?' · bought '+fmtQ(k,ov):''}</div></div>
-      <input type="text" inputmode="decimal" value="${q}" style="width:84px;text-align:right;padding:8px" onchange="shopSetQty('${k}',this.value)"><span class="q">${g.u==='pcs'?'pcs':'g'}</span></div>`};
+  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return q+' pcs';return q>=1000?(q/1000).toFixed(2).replace(/\.?0+$/,'')+' kg':q+' g'};
+  const row=k=>`<div class="shop${SHOP.got[k]?' ok':''}" onclick="shopTick('${k}')"><div class="box">${SHOP.got[k]?'✓':''}</div><div class="nm">${esc(ING[k].n)}</div><span class="q">${fmtQ(k,roundQ(k,need[k]))}</span></div>`;
   const html=aisles.map(a=>{const items=Object.keys(need).filter(k=>ING[k].a===a);if(!items.length)return '';
-    return `<div class="fgrp"><div class="hd">${a}</div>${items.map(row).join('')}</div>`}).join('');
-  document.getElementById('shopList').innerHTML=html||'<div class="muted">Select meals above.</div>';
+    return `<div class="fgrp"><div class="hd">${a.replace('&','&amp;')}</div>${items.map(row).join('')}</div>`}).join('');
+  document.getElementById('shopList').innerHTML=html||'<div class="muted">Pick the meals above.</div>';
 }
 
 /* ============================================================
