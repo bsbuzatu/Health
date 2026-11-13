@@ -4,7 +4,7 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 
 **Live:** https://bsbuzatu.github.io/Feeder/
 **Build:** `2026-11-13-v11.10`
-**Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
+**Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
 
