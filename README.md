@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-12-v11.9`
+**Build:** `2026-11-13-v11.10`
 **Repo name unchanged** (`feeder`) — only the app's display name changed, so the Pages URL and any home-screen shortcut keep working.
 
 ---
@@ -19,6 +19,20 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.10 (13 Nov 2026)
+
+**+ Add ingredient** under every meal (batch cooks, morning items, extras; not Off-plan).
+
+- Collapsed line under the meal's ingredients; opens a dropdown of allowed foods, A→Z by name.
+- The list leaves out every food already in the opened meal, so it only offers additions on top of it. Not offered: dairy foods, beans / chickpeas, sugar / honey, non-rye bread.
+- An added row needs a typed amount (an empty or non-numeric box blocks the save); ✕ removes the row and puts the food back in the list. Several foods can be added to one meal.
+- For a batch meal the amount is the total for the whole cook, like the other boxes.
+- Added foods count in the meal and the day totals and never mark the day off-plan. Saved as `{k, q, add:true}` (typed, never `sug`); the log shows them with a leading “+”.
+- The Shop list still counts only the planned preset amounts.
+- New ingredients: radishes, celery stalk.
+
+Stores, export v4, import, presets, targets, Gym and Fast unchanged.
 
 ## v11.9 (12 Nov 2026)
 

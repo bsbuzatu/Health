@@ -111,6 +111,8 @@ label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:5px;letter
 .prow input.q{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 .prow input.q::placeholder{color:#7d9478;font-weight:600}
 .prow .u{color:var(--muted);font-size:.8rem}
+.prow.add .nm{color:var(--green)}
+.addx{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);padding:2px 7px;margin-right:4px;font-size:.8rem}
 .tot{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:.98rem;line-height:1.5}
 .tot b{color:var(--green)}
 .shop{cursor:pointer}
@@ -299,7 +301,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.9 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.10 · gym · fast · food</div>
   </header>
 
   <main>
@@ -756,7 +758,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const BUILD='2026-11-12-v11.9';
+const BUILD='2026-11-13-v11.10';
 
 /* ============================================================
    State
@@ -2052,6 +2054,8 @@ const ING={
   onion:    {n:'Onion',                 kc:40, p:1.1, c:9,  f:0.1, a:'Produce', m:[1.7,146,10,23]},
   tomato:   {n:'Tomatoes',              kc:18, p:0.9, c:3.9,f:0.2, a:'Produce', m:[1.2,237,11,10]},
   cucumber: {n:'Cucumber',              kc:15, p:0.7, c:3.6,f:0.1, a:'Produce', m:[0.5,147,13,16]},
+  radish:   {n:'Radishes',              kc:16, p:0.7, c:3.4,f:0.1, a:'Produce', m:[1.6,233,10,25]},
+  celery:   {n:'Celery stalk',          kc:16, p:0.7, c:3,  f:0.2, a:'Produce', m:[1.6,260,11,40]},
   lettuce:  {n:'Lettuce / mixed leaves',kc:15, p:1.4, c:2.9,f:0.2, a:'Produce', m:[1.3,194,13,36]},
   lemon:    {n:'Lemon',                 kc:29, p:1.1, c:9,  f:0.3, a:'Produce', u:'pcs', m:[1.6,80,5,15]},
   garlic:   {n:'Garlic (cloves)',       kc:4,  p:0.2, c:1,  f:0,   a:'Produce', u:'pcs', m:[0.1,12,1,5]},
@@ -2147,6 +2151,10 @@ function mealMacros(m,portions=1){
 }
 function itemsMacros(items){return mealMacros({ing:items.map(x=>[x.k,x.q])},1)}
 function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
+/* v11.10 — foods offered by "+ Add ingredient": the allowed list of the master file §8.4.
+   Not offered: dairy foods, beans / chickpeas, sugar / honey, white or mixed-grain bread (whole rye is the bread). */
+const NOT_ADDABLE=new Set(['yog','parm','skyr','cottage','milk','cheese','chickpea','beans','honeyno','bread']);
+const ADDABLE=Object.keys(ING).filter(k=>!NOT_ADDABLE.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n,'en',{sensitivity:'base'}));
 function cookN(m){return m.kind==='batch'?2:1}          // a batch is cooked and logged as 2 portions
 function planQty(m,k,q){return q*cookN(m)}
 function fmtQty(k,q){return unitOf(k)==='pcs'?(q%1?q.toFixed(1):String(q)):String(Math.round(q))}
@@ -2171,6 +2179,7 @@ function foodTab(t){
    weights; a typed number replaces the planned one for that ingredient; 0 = not used.
    Record: {date,time,code,portions:1,comment:'',kc,p,c,f,items:[{k,q,sug?}],ts}
      sug:true  = the planned weight was accepted, not typed
+     add:true  = added on top of the preset with "+ Add ingredient" (v11.10), amount always typed
      code OFF  = off-plan food: free:[{t,q}], no macros, not counted, the day shows OFF-PLAN
    Older records (code LOG food by food, FREE, and the v11.5 preset codes) keep their content. */
 let MEALS_ALL=[];
@@ -2214,28 +2223,58 @@ function renderPick(){
   el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${m.kind==='batch'?'<b>Whole cook</b> = lunch + dinner. ':''}Raw weights. Leave a box empty to save the weight shown; type your own where it differs.</div>`+
     m.ing.map(([k,q])=>`<div class="prow" data-k="${k}"><span class="nm">${esc(ING[k].n)}</span>
       <input type="text" inputmode="decimal" class="q" placeholder="${fmtQty(k,planQty(m,k,q))}" oninput="mealTotals()"><span class="u">${unitOf(k)}</span></div>`).join('')+
+    `<div id="addRows"></div>
+    <details id="addIng" style="margin-top:10px"><summary class="muted" style="cursor:pointer">+ Add ingredient</summary>
+      <div class="muted" style="margin:6px 0 4px;font-size:.85rem">On top of this meal${m.kind==='batch'?' — type the total for the whole cook':''}.</div>
+      <select id="addSel" onchange="addIng(this.value)"></select></details>`+
     `<div class="tot" id="mealTot"></div>`+
     (m.steps&&m.steps.length?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">How to cook</summary>${m.steps.map((st,i)=>`<div class="step"><b>${i+1}</b><span>${st}</span></div>`).join('')}</details>`:'')+foot;
-  mealTotals();
+  fillAddSel();mealTotals();
 }
+/* v11.10 — "+ Add ingredient": allowed foods not already in the meal, A→Z; typed amount required */
+function fillAddSel(){
+  const sel=document.getElementById('addSel');if(!sel)return;
+  const used=new Set([...document.querySelectorAll('#pick .prow[data-k]')].map(r=>r.dataset.k));
+  const opts=ADDABLE.filter(k=>!used.has(k));
+  sel.innerHTML='<option value="">Choose a food…</option>'+opts.map(k=>`<option value="${k}">${esc(ING[k].n)}</option>`).join('');
+  sel.value='';
+}
+function addIng(k){
+  if(!k||!ING[k]||document.querySelector(`#pick .prow[data-k="${k}"]`)){fillAddSel();return}
+  const box=document.getElementById('addRows');if(!box)return;
+  const r=document.createElement('div');r.className='prow add';r.dataset.k=k;r.dataset.add='1';
+  r.innerHTML=`<span class="nm"><button class="addx" aria-label="Remove" onclick="rmIng(this)">✕</button> ${esc(ING[k].n)}</span>
+    <input type="text" inputmode="decimal" class="q" placeholder="${unitOf(k)==='pcs'?'pcs':'g'}" oninput="mealTotals()"><span class="u">${unitOf(k)}</span>`;
+  box.appendChild(r);fillAddSel();mealTotals();
+  const i=r.querySelector('input');if(i)i.focus();
+}
+function rmIng(b){const r=b.closest('.prow');if(r)r.remove();fillAddSel();mealTotals()}
 /* an empty box = the planned weight (sug); a typed number replaces it; 0 leaves the food out */
 function mealRead(){
-  const m=MEAL_BY[PICK], items=[], bad=[];
-  if(!m||m.kind==='free')return {items,bad};
+  const m=MEAL_BY[PICK], items=[], bad=[], need=[];
+  if(!m||m.kind==='free')return {items,bad,need};
   document.querySelectorAll('#pick .prow[data-k]').forEach(r=>{
-    const k=r.dataset.k, raw=r.querySelector('.q').value.trim();
+    const k=r.dataset.k, raw=r.querySelector('.q').value.trim(), add=r.dataset.add==='1';
+    if(add){                                   // added on top: the amount must be typed
+      if(raw===''){need.push(ING[k].n);return}
+      const q=numVal(raw);
+      if(q==null||q<0){bad.push(ING[k].n);return}
+      if(q>0)items.push({k,q,add:true});
+      return;
+    }
     if(raw===''){const q=planQty(m,k,(m.ing.find(x=>x[0]===k)||[k,0])[1]);if(q>0)items.push({k,q,sug:true});return}
     const q=numVal(raw);
     if(q==null||q<0){bad.push(ING[k].n);return}
     if(q>0)items.push({k,q});
   });
-  return {items,bad};
+  return {items,bad,need};
 }
 function mealTotals(){
   const el=document.getElementById('mealTot');if(!el)return;
-  const {items,bad}=mealRead(), x=itemsMacros(items);
+  const {items,bad,need}=mealRead(), x=itemsMacros(items);
   const date=(document.getElementById('logDate')||{}).value||isoToday(), day=dayTotals(date);
   el.innerHTML=bad.length?`<span style="color:var(--amber)">Not a number: ${bad.map(esc).join(', ')}</span>`
+    :need.length?`<span style="color:var(--amber)">Type the amount: ${need.map(esc).join(', ')}</span>`
     :`<b>${x.kc} kcal · ${x.p} g protein</b><br><span class="muted">Day after saving: ${day.kc+x.kc} / ${TGT.kcal} kcal · ${day.p+x.p} / ${TGT.prot} g protein</span>`;
 }
 async function saveMeal(){
@@ -2248,8 +2287,9 @@ async function saveMeal(){
     if(!t){toast('Type what it was');return}
     rec={date,time,code:m.code,portions:1,comment:'',kc:0,p:0,c:0,f:0,items:[],free:[{t,q:q>0?q:null}],ts:Date.now()};
   }else{
-    const {items,bad}=mealRead();
+    const {items,bad,need}=mealRead();
     if(bad.length){toast('Check the amount: '+bad[0]);return}
+    if(need.length){toast('Type the amount: '+need[0]);return}
     if(!items.length){toast('Nothing to save');return}
     rec={date,time,code:m.code,portions:1,comment:'',...itemsMacros(items),items,ts:Date.now()};
   }
@@ -2330,7 +2370,7 @@ function renderLog(){
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   const nameOf=m=>m.code==='LOG'?'Logged food':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
   document.getElementById('dayMeals').innerHTML=ms.map(m=>{
-    const det=[(m.items||[]).map(x=>esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' pcs':' g')).join(' · '),
+    const det=[(m.items||[]).map(x=>(x.add?'+ ':'')+esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' pcs':' g')).join(' · '),
                (m.free||[]).map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · '), m.comment?esc(m.comment):''].filter(Boolean).join('<br>');
     const notCounted=isOff(m)&&!(m.items&&m.items.length)&&!(m.kc>0);
     return `<div class="ml">
