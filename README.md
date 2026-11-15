@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-13-v11.10`
+**Build:** `2026-11-15-v11.11`
 **Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
@@ -19,6 +19,14 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.11 (15 Nov 2026)
+
+- **Food tab in Romanian**: ingredients, meal names, recipe steps, buttons, labels, day status and the Shop list (`ING_RO`, `MEALS_RO`, `AISLE_RO`). Gym, Fast, Stats and Settings stay in English. Internal keys and codes unchanged.
+- **Allowed foods expanded** to 97 entries in "+ Adaugă aliment", sorted A→Z with Romanian collation (`localeCompare(…,'ro')`). 43 new ingredients (fish, vegetables, berries, pickles in brine, grains, nuts and seeds). Foods with a limit show it in the list via `lim`, e.g. *Vită slabă (pulpă) (max 1×/săpt.)*. Still excluded: dairy foods, beans / chickpeas, sugar / honey, non-rye bread.
+- **Gustare (snack)** in Extra (`code:'SN'`, `kind:'snack'`): pick any allowed foods and type the grams; saved as one counted entry, items typed (no `sug`, no `add`), never off-plan.
+- **Day note** on the Log: free text per date, autosaved to `settings.dayNotes = {'YYYY-MM-DD': {t, ts}}`, exported with the settings and merged on import (a note already on the phone wins). A day with a note and no food shows *DOAR NOTĂ*.
+- Off-plan entry kept. Stores, export v4, presets and their amounts, targets, Gym and Fast unchanged.
 
 ## v11.10 (13 Nov 2026)
 

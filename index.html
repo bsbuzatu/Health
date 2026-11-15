@@ -231,6 +231,7 @@ input[type=datetime-local],input[type=time]{color-scheme:dark}
 textarea{font-family:inherit;font-size:1rem;color:var(--txt);background:var(--panel2);border:1px solid var(--line);
   border-radius:10px;padding:10px;width:100%;min-height:72px;resize:vertical}
 textarea:focus{outline:none;border-color:var(--green)}
+#dayNoteT{width:100%;min-height:76px}
 
 /* ===== v11: sub-tabs, chips, shopping ===== */
 .subtabs{display:flex;gap:6px;margin-bottom:12px}
@@ -301,7 +302,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.10 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.11 · gym · fast · food</div>
   </header>
 
   <main>
@@ -450,22 +451,23 @@ input[type=date]{color-scheme:dark}
       </div>
     </section>
 
-    <!-- ============ FOOD (v11.9: Log · Shop) ============ -->
+    <!-- ============ FOOD (v11.9: Log · Shop; Romanian since v11.11) ============ -->
     <section id="v-foods" class="hidden">
       <div class="subtabs">
-        <button id="ft-log"  class="on" onclick="foodTab('log')">Log</button>
-        <button id="ft-shop"            onclick="foodTab('shop')">Shop</button>
+        <button id="ft-log"  class="on" onclick="foodTab('log')">Jurnal</button>
+        <button id="ft-shop"            onclick="foodTab('shop')">Cumpărături</button>
       </div>
 
       <!-- LOG -->
       <div id="fv-log">
         <div class="card">
           <div class="row" style="justify-content:space-between;margin-bottom:8px">
-            <h3 style="margin:0" id="logTitle">Today</h3>
+            <h3 style="margin:0" id="logTitle">Azi</h3>
             <input type="date" id="logDate" style="width:auto;padding:7px 9px;font-size:.9rem" onchange="renderLog();mealTotals()">
           </div>
           <div id="dayLight"></div>
           <div id="dayMeals"></div>
+          <div id="dayNoteBox"></div>
         </div>
         <div class="card" id="pickCard"><div id="pick"></div></div>
       </div>
@@ -473,14 +475,14 @@ input[type=date]{color-scheme:dark}
       <!-- SHOP -->
       <div id="fv-shop" class="hidden">
         <div class="card">
-          <h3>What will you cook?</h3>
-          <div class="muted">Tap a meal once for each day you will eat it.</div>
+          <h3>Ce gătești?</h3>
+          <div class="muted">Atinge o masă o dată pentru fiecare zi în care o mănânci.</div>
           <div id="shopPlan"></div>
         </div>
         <div class="card">
           <div class="row" style="justify-content:space-between">
-            <h3 style="margin:0">To buy</h3>
-            <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="shopReset()">Clear</button>
+            <h3 style="margin:0">De cumpărat</h3>
+            <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="shopReset()">Golește</button>
           </div>
           <div id="shopList" style="margin-top:6px"></div>
         </div>
@@ -758,7 +760,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const BUILD='2026-11-13-v11.10';
+const BUILD='2026-11-15-v11.11';
 
 /* ============================================================
    State
@@ -818,7 +820,7 @@ async function boot(){
   await renderRecent();
   initStatsForm();initLabForm();initLogForm();
   let fastFixed=0;try{fastFixed=await fastSanitize()}catch(e){}
-  await Promise.all([loadFasts(),loadMeals(),loadLabs(),loadShop()]);
+  await Promise.all([loadFasts(),loadMeals(),loadLabs(),loadShop(),loadDayNotes()]);
   renderFast();renderLog();
   await renderStats();
   await renderDiag();
@@ -831,7 +833,7 @@ async function boot(){
    Navigare
    ============================================================ */
 const TITLES={gym:['Gym','Full-Body A\u2192B\u2192C + Zone 2'],fast:['Fast','16 : 8'],stats:['Stats','Body & health'],
-  foods:['Food','Log \u00B7 Shop'],set:['Settings','Targets & data']};
+  foods:['Mâncare','Jurnal \u00B7 Cumpărături'],set:['Settings','Targets & data']};
 function go(v){
   ['gym','fast','stats','foods','set'].forEach(k=>{
     document.getElementById('v-'+k).classList.toggle('hidden',k!==v);
@@ -1679,6 +1681,13 @@ async function importJSON(){
   for(const m of (d.meals||[])){if(ms.has(mk(m)))continue;const c={...m};delete c.id;await put('meals',c);ms.add(mk(m));okMl++}
   for(const l of (d.labs||[])){if(!l.date)continue;const ex=await get1('labs',l.date)||{};await put('labs',{...l,...ex,date:l.date});okL++}
   if(d.settings&&d.settings.targets){await put('settings',{key:'targets',value:d.settings.targets});await loadTargets()}
+  /* v11.11 — day notes: merged by date; a note already on this phone wins */
+  if(d.settings&&d.settings.dayNotes&&typeof d.settings.dayNotes==='object'){
+    await loadDayNotes();let ch=0;
+    Object.entries(d.settings.dayNotes).forEach(([k,v])=>{if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v&&v.t&&!DAY_NOTES[k]){DAY_NOTES[k]={t:String(v.t),ts:v.ts||Date.now()};ch++}});
+    if(ch)await put('settings',{key:'dayNotes',value:DAY_NOTES});
+    const nb=document.getElementById('dayNoteBox');if(nb)nb.dataset.date='';
+  }
 
   try{await fastSanitize()}catch(e){}
   await buildLastMap();await renderRecent();await Promise.all([loadFasts(),loadMeals(),loadLabs()]);renderFast();renderLog();
@@ -2062,6 +2071,81 @@ const ING={
   oil:      {n:'Extra-virgin olive oil',kc:884,p:0,   c:0,  f:100, a:'Pantry', m:[0,0,0,0]},
   acv:      {n:'Apple cider vinegar',   kc:22, p:0,   c:0.9,f:0,   a:'Pantry', m:[0,0,0,0]}
 };
+/* v11.11 — more allowed foods for "+ Adaugă aliment" and Gustare (master file §8.4). Per 100 g raw
+   (pickles: drained); standard food-composition values, rounded. lim = the limit shown in the list. */
+Object.assign(ING,{
+  sardine:  {n:'Sardine conservă, scurse',      kc:208,p:25, c:0,  f:11,  a:'Pantry',      lim:'max 1×/săpt.', m:[0,397,39,382]},
+  mackerel: {n:'Macrou',                        kc:205,p:19, c:0,  f:14,  a:'Meat & fish', lim:'max 1×/săpt.', m:[0,314,76,12]},
+  pollock:  {n:'Pollock / cod de Alaska (file)',kc:92, p:19, c:0,  f:1,   a:'Meat & fish', m:[0,330,60,60]},
+  bream:    {n:'Doradă',                        kc:115,p:20, c:0,  f:4,   a:'Meat & fish', m:[0,400,30,20]},
+  seabass:  {n:'Lavrac',                        kc:97, p:18, c:0,  f:2,   a:'Meat & fish', m:[0,256,41,10]},
+  tkmince:  {n:'Carne tocată de curcan',        kc:150,p:19, c:0,  f:8,   a:'Meat & fish', m:[0,250,22,15]},
+  rabbit:   {n:'Iepure',                        kc:136,p:21, c:0,  f:5.5, a:'Meat & fish', m:[0,330,29,13]},
+  cauli:    {n:'Conopidă',                      kc:25, p:1.9,c:5,  f:0.3, a:'Produce', lim:'balonare ușoară', m:[2,299,15,22]},
+  gtomato:  {n:'Roșii verzi',                   kc:23, p:1.2,c:5.1,f:0.2, a:'Produce', lim:'gătite sau murate; crude puține', m:[1.1,204,10,13]},
+  kale:     {n:'Kale',                          kc:49, p:4.3,c:9,  f:0.9, a:'Produce', m:[3.6,491,47,150]},
+  rocket:   {n:'Rucola',                        kc:25, p:2.6,c:3.7,f:0.7, a:'Produce', m:[1.6,369,47,160]},
+  redcab:   {n:'Varză roșie',                   kc:31, p:1.4,c:7,  f:0.2, a:'Produce', lim:'crudă: balonare', m:[2.1,243,16,45]},
+  brussels: {n:'Varză de Bruxelles',            kc:43, p:3.4,c:9,  f:0.3, a:'Produce', lim:'balonare', m:[3.8,389,23,42]},
+  kohlrabi: {n:'Gulie',                         kc:27, p:1.7,c:6,  f:0.1, a:'Produce', m:[3.6,350,19,24]},
+  parsnip:  {n:'Păstârnac',                     kc:75, p:1.2,c:18, f:0.3, a:'Produce', m:[4.9,375,29,36]},
+  parsroot: {n:'Rădăcină de pătrunjel',         kc:55, p:2.3,c:12, f:0.6, a:'Produce', m:[4.3,262,22,140]},
+  asparagus:{n:'Sparanghel',                    kc:20, p:2.2,c:3.9,f:0.1, a:'Produce', m:[2.1,202,14,24]},
+  peas:     {n:'Mazăre verde (proaspătă/congelată)',kc:81,p:5.4,c:14,f:0.4,a:'Produce', m:[5.1,244,33,25]},
+  corn:     {n:'Porumb dulce',                  kc:86, p:3.3,c:19, f:1.4, a:'Produce', m:[2,270,37,2]},
+  sonion:   {n:'Ceapă verde',                   kc:32, p:1.8,c:7,  f:0.2, a:'Produce', m:[2.6,276,20,72]},
+  gpepper:  {n:'Ardei gras verde',              kc:20, p:0.9,c:4.6,f:0.2, a:'Produce', m:[1.7,175,10,10]},
+  parsley:  {n:'Pătrunjel verde',               kc:36, p:3,  c:6,  f:0.8, a:'Produce', m:[3.3,554,50,138]},
+  dill:     {n:'Mărar',                         kc:43, p:3.5,c:7,  f:1.1, a:'Produce', m:[2.1,738,55,208]},
+  oyster:   {n:'Pleurotus',                     kc:33, p:3.3,c:6,  f:0.4, a:'Produce', m:[2.3,420,18,3]},
+  strawb:   {n:'Căpșuni',                       kc:32, p:0.7,c:7.7,f:0.3, a:'Produce', m:[2,153,13,16]},
+  blueb:    {n:'Afine',                         kc:57, p:0.7,c:14, f:0.3, a:'Produce', m:[2.4,77,6,6]},
+  raspb:    {n:'Zmeură',                        kc:52, p:1.2,c:12, f:0.7, a:'Produce', m:[6.5,151,22,25]},
+  blackb:   {n:'Mure',                          kc:43, p:1.4,c:10, f:0.5, a:'Produce', m:[5.3,162,20,29]},
+  sauerkr:  {n:'Varză murată în saramură',      kc:19, p:0.9,c:4.3,f:0.1, a:'Pantry', lim:'sare — ~100 g/zi', m:[2.9,170,13,30]},
+  pcucumb:  {n:'Castraveți murați în saramură', kc:12, p:0.5,c:2.3,f:0.2, a:'Pantry', lim:'sare — ~100 g/zi', m:[1,23,4,0]},
+  pcauli:   {n:'Conopidă murată în saramură',   kc:20, p:1.5,c:4,  f:0.2, a:'Pantry', lim:'sare — ~100 g/zi', m:[2,150,12,20]},
+  pgtomato: {n:'Gogonele murate în saramură',   kc:20, p:1,  c:4,  f:0.2, a:'Pantry', lim:'sare — ~100 g/zi; fără zahăr', m:[1,150,8,10]},
+  millet:   {n:'Mei (crud)',                    kc:378,p:11, c:73, f:4.2, a:'Dry goods', m:[8.5,195,114,8]},
+  wwcous:   {n:'Cuscus integral (crud)',        kc:362,p:12.8,c:72,f:1.3, a:'Dry goods', m:[5,200,44,25]},
+  ryecrisp: {n:'Pâine crocantă de secară integrală',kc:334,p:9,c:63,f:1.4,a:'Dry goods', m:[17,400,70,30]},
+  hazel:    {n:'Alune de pădure',               kc:628,p:15, c:17, f:61,  a:'Staples', m:[9.7,680,163,114]},
+  almond:   {n:'Migdale',                       kc:579,p:21, c:22, f:50,  a:'Staples', m:[12.5,733,270,269]},
+  pistach:  {n:'Fistic (nesărat)',              kc:560,p:20, c:28, f:45,  a:'Staples', m:[10,1025,121,105]},
+  pumpseed: {n:'Semințe de dovleac',            kc:559,p:30, c:11, f:49,  a:'Staples', m:[6,809,592,46]},
+  sunseed:  {n:'Semințe de floarea-soarelui',   kc:584,p:21, c:20, f:51,  a:'Staples', m:[8.6,645,325,78]},
+  flax:     {n:'Semințe de in',                 kc:534,p:18, c:29, f:42,  a:'Staples', m:[27,813,392,255]},
+  tahini:   {n:'Tahini (pastă de susan)',       kc:595,p:17, c:21, f:54,  a:'Pantry', m:[9,414,95,426]},
+  tompaste: {n:'Pastă de tomate',               kc:82, p:4.3,c:19, f:0.5, a:'Pantry', m:[4.1,1014,42,36]}
+});
+/* v11.11 — the Food tab is in Romanian: names of the original ingredients */
+const ING_RO={chicken:'Piept de pui',chthigh:'Pulpe de pui dezosate, fără piele',turkey:'Piept de curcan',
+  tkthigh:'Pulpe de curcan dezosate, fără piele',beef:'Vită slabă (pulpă)',salmon:'Somon (file)',trout:'Păstrăv (file)',
+  pork:'Mușchiuleț de porc',cod:'Cod / merluciu (file)',tuna:'Ton în apă, scurs',egg:'Ouă întregi',eggwhite:'Albușuri',
+  yog:'Iaurt grecesc 2 %',parm:'Parmezan',skyr:'Skyr',whey:'Proteină whey izolat',creatine:'Creatină monohidrat',
+  psyllium:'Tărâțe de psyllium',walnut:'Nuci',chia:'Semințe de chia',banana:'Banană',rice:'Orez brun (crud)',
+  lentil:'Linte roșie (crudă)',quinoa:'Quinoa (crudă)',bulgur:'Bulgur (crud)',buckwheat:'Hrișcă (crudă)',
+  barley:'Arpacaș (crud)',wwpasta:'Paste integrale (crude)',chickpea:'Năut conservă',potato:'Cartofi',
+  spotato:'Cartofi dulci',rye:'Pâine integrală de secară (felie 40 g)',broccoli:'Broccoli',
+  gbeans:'Fasole verde (proaspătă/congelată)',olive:'Măsline fără sâmburi',apple:'Măr',
+  berries:'Fructe de pădure (proaspete/congelate)',kiwi:'Kiwi',grapes:'Struguri',oats:'Fulgi de ovăz',
+  cottage:'Brânză de vaci',milk:'Lapte 1,5 %',bread:'Pâine integrală',nuts:'Nuci mixte',avocado:'Avocado',
+  carrot:'Morcovi',cabbage:'Varză albă',mushroom:'Ciuperci champignon',eggplant:'Vinete',
+  beet:'Sfeclă roșie fiartă (vidată)',leek:'Praz',celeriac:'Țelină rădăcină',pumpkin:'Dovleac / butternut',
+  passata:'Passata de roșii (fără zahăr)',cheese:'Brânză tare',beans:'Fasole albă fiartă',
+  shrimp:'Creveți / fructe de mare',honeyno:'Zahăr / miere',spinach:'Spanac',zucchini:'Dovlecei',
+  pepper:'Ardei gras roșu',onion:'Ceapă',tomato:'Roșii',cucumber:'Castraveți',lettuce:'Salată verde / mix',
+  lemon:'Lămâie',garlic:'Usturoi (căței)',oil:'Ulei de măsline extravirgin',acv:'Oțet de mere',
+  radish:'Ridichi',celery:'Țelină apio (tulpină)'};
+Object.entries(ING_RO).forEach(([k,n])=>{if(ING[k])ING[k].n=n});
+/* limits from the master file §8.4, shown next to the name in the lists */
+Object.entries({beef:'max 1×/săpt.',tuna:'max 2 zile/săpt.',egg:'gălbenușuri ~8/săpt.',olive:'sare',
+  grapes:'max 250 g, doar la prânz',banana:'doar în shake',cabbage:'crudă: balonare',broccoli:'balonare ușoară'})
+  .forEach(([k,l])=>{if(ING[k])ING[k].lim=l});
+const AISLE_RO={'Meat & fish':'Carne și pește','Dairy & eggs':'Ouă','Produce':'Legume și fructe',
+  'Dry goods':'Cereale și paste','Pantry':'Cămară','Staples':'De bază'};
+function ingLabel(k){const g=ING[k];return g.n+(g.lim?' ('+g.lim+')':'')}
+function uLbl(k){return unitOf(k)==='pcs'?'buc':'g'}
 /* ing = [key, amount per ONE portion] (g, or pieces for u:'pcs').
    kind 'batch' is cooked and logged as the whole cook = 2 portions (lunch + dinner).
    v11.9 — every morning item + one batch cook is audited to 2,050–2,250 kcal and 155–185 g protein,
@@ -2134,6 +2218,7 @@ const MEALS=[
   {code:'XB', kind:'extra', name:'Berries',        ing:[['berries',150]], steps:[]},
   {code:'XN', kind:'extra', name:'Nuts',           ing:[['nuts',15]], steps:[]},
   {code:'XR', kind:'extra', name:'Rye bread',      ing:[['rye',1]], steps:[]},
+  {code:'SN', kind:'snack', name:'Snack',          ing:[], steps:[]},   // v11.11 — any allowed foods, typed grams
   {code:'OFF',kind:'free',  name:'Off-plan food',  ing:[], steps:[]},
 
   /* legacy codes — kept so older log entries still show their name; not offered any more */
@@ -2142,6 +2227,31 @@ const MEALS=[
   {code:'VAR', kind:'legacy', name:'Various (old)', ing:[], steps:[]},
   {code:'OTH', kind:'legacy', name:'Estimate (old)', ing:[], steps:[]}
 ];
+/* v11.11 — the Food tab is in Romanian: meal names and recipe steps */
+const MEALS_RO={
+  SHK:['Shake ovăz-banană',['Blender: 400 ml apă, întâi ovăzul (10 s), apoi whey, banana, nucile, creatina.','Psyllium la final, 5 s în blender, și se bea imediat — se îngroașă.']],
+  SHW:['Whey cu nuci și ovăz',['Blender: 400 ml apă, întâi ovăzul (10 s), apoi whey, nucile, creatina.','Psyllium la final, 5 s în blender, și se bea imediat.']],
+  SHB:['Shake cu fructe de pădure și chia',['Blender: 400 ml apă, întâi ovăzul (10 s), apoi whey, fructele congelate, nucile, chia, creatina.','Psyllium la final, 5 s în blender, și se bea imediat.']],
+  OML:['Omletă · secară · fructe de pădure',['Călește legumele în ulei 3 min (tigaie antiaderentă).','Adaugă ouăle și albușurile, sare, piper; la foc mic până se închegă.','Două felii de pâine integrală de secară, fructele alături. Psyllium într-un pahar cu apă.']],
+  C1:['Curcan · bulgur · dovlecei și ardei',['Oală: curcanul bucăți, dovleceii, ardeiul, ceapa, usturoiul, passata, 150 ml apă, sare, boia. Low 6 h sau High 3 h.','Bulgurul în ultimele 30 min (cu 150 ml apă fierbinte), cu capacul pus.','Uleiul de măsline se amestecă după gătire. Castraveții cruzi alături.','Împarte în 2 caserole.']],
+  C2:['Pui · arpacaș · rădăcinoase · salată de sfeclă',['Oală: pulpele de pui, arpacașul spălat, morcovul, țelina, prazul, usturoiul, 500 ml apă, sare, foi de dafin, cimbru. Low 6–7 h sau High 3–4 h.','Jumătate din ulei se amestecă după gătire.','Salata de sfeclă: sfecla feliată, restul uleiului, lămâie, puțin hrean ras dacă vrei.','Împarte în 2 caserole.']],
+  C3:['Tocăniță de mușchiuleț de porc · cartofi · salată de roșii',['Oală: porcul cuburi de 3 cm, cartofii bucăți, morcovul, ceapa, usturoiul, passata, 100 ml apă, sare, boia, foi de dafin. Low 5–6 h sau High 3 h.','Cea mai mare parte din ulei se amestecă după gătire.','Salată de roșii și castraveți cu restul uleiului.','Împarte în 2 caserole.']],
+  C4:['Pui · linte roșie · dovleac · spanac',['Oală: puiul bucăți, lintea spălată, dovleacul cuburi, ceapa, usturoiul, passata, 350 ml apă, sare, chimion, turmeric. Low 5–6 h sau High 3 h.','Spanacul în ultimele 15 min.','Uleiul și lămâia se amestecă după gătire.','Împarte în 2 caserole. Prima dată: urmărește cum îți priește lintea.']],
+  M1:['Pui · orez brun · fasole verde · salată de roșii',['Orezul: spălat, 1 : 2 apă, cu capac, 35 min.','Puiul: sare, piper, boia; tigaie uscată sau cuptor 200 °C, 20–25 min.','Fasolea verde: la abur sau fiartă 6–8 min; cu jumătate din ulei, lămâie, usturoi pisat.','Salată de roșii și castraveți cu restul uleiului. Împarte în 2 caserole.']],
+  M2:['Păstrăv (sau somon) · cartofi · salată',['Cartofii: fierți în coajă 20 min, răciți în frigider (amidon rezistent).','Păstrăvul: cuptor 200 °C, 12–15 min, lămâie, mărar. Cu somon: 190 g de porție (380 g la gătit).','Salata cu uleiul și oțetul; pentru caserola de seară, dressingul separat.']],
+  M3:['Curcan · bulgur · legume la cuptor',['Bulgurul: 1 : 2 apă clocotită, cu capac, 15 min de pe foc.','Legumele bucăți, ulei, sare; cuptor 210 °C, 25 min, fâșiile de curcan pe aceeași tavă în ultimele 15 min.','Împarte în 2 caserole.']],
+  M4:['Mușchiuleț de porc · cartofi dulci · salată',['Cartofii dulci felii, jumătate din ulei, cuptor 210 °C, 30 min.','Mușchiulețul în medalioane de 2 cm, tigaie încinsă 2–3 min pe parte, odihnă 5 min.','Salata cu restul uleiului și lămâie.','Vita slabă (400 g la gătit) poate înlocui porcul cel mult o dată pe săptămână.']],
+  M5:['Cod · cartofi dulci · spanac',['Cartofii dulci felii, jumătate din ulei, cuptor 210 °C, 30 min.','Codul pe aceeași tavă în ultimele 12 min, lămâie.','Spanacul 2 min în tigaie cu usturoi și restul uleiului.']],
+  M6:['Ton · quinoa · roșii · castraveți · măsline (fără gătit)',['Quinoa: spălată, 1 : 2 apă, 15 min, odihnă 5 min (se poate găti cu 2–3 zile înainte, ține în frigider).','Tonul scurs, amestecă totul, lămâie, piper. Cel mult 2 zile pe săptămână.']],
+  M7:['Pui · paste integrale · sos de roșii · salată verde',['Pastele: fierte al dente (integrale, 9–10 min).','Ceapa și usturoiul în jumătate din ulei 3 min, passata 10 min, busuioc, sare.','Fâșiile de pui în sos 8–10 min; amestecă cu pastele.','Salata verde și castraveții cu restul uleiului.']],
+  M8:['Frittata · cartofi · ardei (fără carne)',['Cartofii cubulețe, fierți 8 min, scurși.','Ardeiul și ceapa în ulei 5 min, adaugă cartofii, toarnă ouăle și albușurile, sare; cuptor 180 °C, 20 min, sau cu capac la foc mic.','Taie în două.']],
+  M9:['Pui · hrișcă · ciuperci · salată de sfeclă și morcov',['Hrișca: spălată, 1 : 2 apă, cu capac, 15 min, odihnă 5 min.','Ciupercile și ceapa în jumătate din ulei, tigaie încinsă 6–8 min, sare, cimbru.','Puiul: sare, piper; tigaie uscată sau cuptor 200 °C, 20–25 min.','Salata: morcov ras și sfeclă feliată, restul uleiului, lămâie.']],
+  M10:['Curcan · cartofi · fasole verde · salată de vinete',['Vinetele: întregi în cuptor 220 °C, 40 min, curățate, tocate, amestecate cu ceapa tocată mărunt, sare și cea mai mare parte din ulei.','Cartofii: fierți în coajă 20 min. Fasolea verde: la abur 6–8 min.','Curcanul: sare, piper, boia; tigaie sau cuptor 200 °C, 15–20 min.','Roșiile alături. Împarte în 2 caserole.']],
+  XV:['Legume crude',[]],XA:['Măr',[]],XB:['Fructe de pădure',[]],XN:['Nuci mixte',[]],XR:['Pâine de secară',[]],
+  SN:['Gustare',[]],OFF:['Mâncare în afara planului',[]],
+  FREE:['Intrare liberă (veche)',[]],SHKN:['Shake + nuci (vechi)',[]],VAR:['Diverse (vechi)',[]],OTH:['Estimare (veche)',[]]
+};
+MEALS.forEach(m=>{const r=MEALS_RO[m.code];if(r){m.name=r[0];if(r[1].length)m.steps=r[1]}});
 const MEAL_BY=Object.fromEntries(MEALS.map(m=>[m.code,m]));
 function mealMacros(m,portions=1){
   const t={kc:0,p:0,c:0,f:0};
@@ -2154,7 +2264,7 @@ function unitOf(k){return ING[k]&&ING[k].u==='pcs'?'pcs':'g'}
 /* v11.10 — foods offered by "+ Add ingredient": the allowed list of the master file §8.4.
    Not offered: dairy foods, beans / chickpeas, sugar / honey, white or mixed-grain bread (whole rye is the bread). */
 const NOT_ADDABLE=new Set(['yog','parm','skyr','cottage','milk','cheese','chickpea','beans','honeyno','bread']);
-const ADDABLE=Object.keys(ING).filter(k=>!NOT_ADDABLE.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n,'en',{sensitivity:'base'}));
+const ADDABLE=Object.keys(ING).filter(k=>!NOT_ADDABLE.has(k)).sort((a,b)=>ING[a].n.localeCompare(ING[b].n,'ro',{sensitivity:'base'}));
 function cookN(m){return m.kind==='batch'?2:1}          // a batch is cooked and logged as 2 portions
 function planQty(m,k,q){return q*cookN(m)}
 function fmtQty(k,q){return unitOf(k)==='pcs'?(q%1?q.toFixed(1):String(q)):String(Math.round(q))}
@@ -2186,10 +2296,10 @@ let MEALS_ALL=[];
 async function loadMeals(){MEALS_ALL=await all('meals')}
 const OFFPLAN=new Set(['FREE','OTH','VAR','OFF']);
 const PICK_GROUPS=[
-  ['Morning',                         m=>m.kind==='shake'||m.kind==='eggs'],
-  ['Crock-pot · lunch + dinner', m=>m.kind==='batch'&&m.grp==='crock'],
-  ['Pan & oven · lunch + dinner',m=>m.kind==='batch'&&m.grp!=='crock'],
-  ['Extras',                          m=>m.kind==='extra'||m.kind==='free']
+  ['Dimineața',                       m=>m.kind==='shake'||m.kind==='eggs'],
+  ['Oala lentă · prânz + cină',        m=>m.kind==='batch'&&m.grp==='crock'],
+  ['Tigaie și cuptor · prânz + cină',  m=>m.kind==='batch'&&m.grp!=='crock'],
+  ['Extra',                           m=>m.kind==='extra'||m.kind==='snack'||m.kind==='free']
 ];
 let PICK=null;
 function initLogForm(){
@@ -2201,9 +2311,9 @@ function nowHM(){const n=new Date();return pad(n.getHours())+':'+pad(n.getMinute
 function renderPick(){
   const el=document.getElementById('pick');if(!el)return;
   if(!PICK){
-    el.innerHTML='<h3>Add a meal</h3>'+PICK_GROUPS.map(([title,fn])=>{
+    el.innerHTML='<h3>Adaugă o masă</h3>'+PICK_GROUPS.map(([title,fn])=>{
       const ms=MEALS.filter(fn);if(!ms.length)return '';
-      const small=title==='Extras';
+      const small=title==='Extra';
       return `<div class="grp">${title.replace('&','&amp;')}</div>`+(small
         ?`<div class="chips">${ms.map(m=>`<button class="chip${m.kind==='free'?' oth':''}" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join('')}</div>`
         :ms.map(m=>`<button class="pick" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join(''));
@@ -2211,40 +2321,42 @@ function renderPick(){
     return;
   }
   const m=MEAL_BY[PICK], head=`<div class="row" style="justify-content:space-between;margin-bottom:6px"><h3 style="margin:0">${esc(m.name)}</h3>
-      <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="pickMeal(null)">Back</button></div>`;
-  const foot=`<div class="prow" style="margin-top:12px"><span class="nm muted">Eaten at</span><input type="time" id="logTime" value="${nowHM()}" style="grid-column:2 / 4"></div>
-    <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Save</button>`;
+      <button class="btn ghost" style="width:auto;padding:7px 12px;font-size:.85rem" onclick="pickMeal(null)">Înapoi</button></div>`;
+  const foot=`<div class="prow" style="margin-top:12px"><span class="nm muted">Ora mesei</span><input type="time" id="logTime" value="${nowHM()}" style="grid-column:2 / 4"></div>
+    <button class="btn primary" style="margin-top:12px" onclick="saveMeal()">Salvează</button>`;
   if(m.kind==='free'){
-    el.innerHTML=head+`<div class="muted" style="margin-bottom:8px">Anything that is not one of the meals. It is not counted; the day is marked off-plan.</div>
-      <input type="text" id="offT" placeholder="what (e.g. bread with butter)">
-      <div class="prow"><span class="nm muted">Roughly how much</span><input type="text" inputmode="decimal" class="q" id="offQ" placeholder="—"><span class="u">g</span></div>`+foot;
+    el.innerHTML=head+`<div class="muted" style="margin-bottom:8px">Orice nu e din lista permisă. Nu se numără; ziua apare „în afara planului”.</div>
+      <input type="text" id="offT" placeholder="ce (ex. pâine cu unt)">
+      <div class="prow"><span class="nm muted">Cam cât</span><input type="text" inputmode="decimal" class="q" id="offQ" placeholder="—"><span class="u">g</span></div>`+foot;
     return;
   }
-  el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${m.kind==='batch'?'<b>Whole cook</b> = lunch + dinner. ':''}Raw weights. Leave a box empty to save the weight shown; type your own where it differs.</div>`+
+  const snack=m.kind==='snack';
+  el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${snack?'Alege alimentele din listă și scrie cantitatea crudă a fiecăruia.':(m.kind==='batch'?'<b>Tot ce gătești</b> = prânz + cină. ':'')+'Cantități crude. Lasă căsuța goală ca să salvezi cantitatea afișată; scrie alta unde diferă.'}</div>`+
     m.ing.map(([k,q])=>`<div class="prow" data-k="${k}"><span class="nm">${esc(ING[k].n)}</span>
-      <input type="text" inputmode="decimal" class="q" placeholder="${fmtQty(k,planQty(m,k,q))}" oninput="mealTotals()"><span class="u">${unitOf(k)}</span></div>`).join('')+
+      <input type="text" inputmode="decimal" class="q" placeholder="${fmtQty(k,planQty(m,k,q))}" oninput="mealTotals()"><span class="u">${uLbl(k)}</span></div>`).join('')+
     `<div id="addRows"></div>
-    <details id="addIng" style="margin-top:10px"><summary class="muted" style="cursor:pointer">+ Add ingredient</summary>
-      <div class="muted" style="margin:6px 0 4px;font-size:.85rem">On top of this meal${m.kind==='batch'?' — type the total for the whole cook':''}.</div>
-      <select id="addSel" onchange="addIng(this.value)"></select></details>`+
+    <details id="addIng" style="margin-top:10px"${snack?' open':''}><summary class="muted" style="cursor:pointer">+ Adaugă aliment</summary>
+      ${snack?'':`<div class="muted" style="margin:6px 0 4px;font-size:.85rem">Peste această masă${m.kind==='batch'?' — scrie totalul pentru tot ce gătești':''}.</div>`}
+      <select id="addSel" onchange="addIng(this.value)" style="margin-top:6px"></select></details>`+
     `<div class="tot" id="mealTot"></div>`+
-    (m.steps&&m.steps.length?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">How to cook</summary>${m.steps.map((st,i)=>`<div class="step"><b>${i+1}</b><span>${st}</span></div>`).join('')}</details>`:'')+foot;
+    (m.steps&&m.steps.length?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Cum se gătește</summary>${m.steps.map((st,i)=>`<div class="step"><b>${i+1}</b><span>${st}</span></div>`).join('')}</details>`:'')+foot;
   fillAddSel();mealTotals();
 }
-/* v11.10 — "+ Add ingredient": allowed foods not already in the meal, A→Z; typed amount required */
+/* v11.10 — "+ Add ingredient": allowed foods not already in the meal, A→Z; typed amount required.
+   v11.11 — Romanian names, Romanian A→Z order, limits shown; also used by the Gustare (snack) entry. */
 function fillAddSel(){
   const sel=document.getElementById('addSel');if(!sel)return;
   const used=new Set([...document.querySelectorAll('#pick .prow[data-k]')].map(r=>r.dataset.k));
   const opts=ADDABLE.filter(k=>!used.has(k));
-  sel.innerHTML='<option value="">Choose a food…</option>'+opts.map(k=>`<option value="${k}">${esc(ING[k].n)}</option>`).join('');
+  sel.innerHTML='<option value="">Alege un aliment…</option>'+opts.map(k=>`<option value="${k}">${esc(ingLabel(k))}</option>`).join('');
   sel.value='';
 }
 function addIng(k){
   if(!k||!ING[k]||document.querySelector(`#pick .prow[data-k="${k}"]`)){fillAddSel();return}
   const box=document.getElementById('addRows');if(!box)return;
   const r=document.createElement('div');r.className='prow add';r.dataset.k=k;r.dataset.add='1';
-  r.innerHTML=`<span class="nm"><button class="addx" aria-label="Remove" onclick="rmIng(this)">✕</button> ${esc(ING[k].n)}</span>
-    <input type="text" inputmode="decimal" class="q" placeholder="${unitOf(k)==='pcs'?'pcs':'g'}" oninput="mealTotals()"><span class="u">${unitOf(k)}</span>`;
+  r.innerHTML=`<span class="nm"><button class="addx" aria-label="Șterge" onclick="rmIng(this)">✕</button> ${esc(ING[k].n)}</span>
+    <input type="text" inputmode="decimal" class="q" placeholder="${uLbl(k)}" oninput="mealTotals()"><span class="u">${uLbl(k)}</span>`;
   box.appendChild(r);fillAddSel();mealTotals();
   const i=r.querySelector('input');if(i)i.focus();
 }
@@ -2259,7 +2371,7 @@ function mealRead(){
       if(raw===''){need.push(ING[k].n);return}
       const q=numVal(raw);
       if(q==null||q<0){bad.push(ING[k].n);return}
-      if(q>0)items.push({k,q,add:true});
+      if(q>0)items.push(m.kind==='snack'?{k,q}:{k,q,add:true});   // a snack's foods are its own, not additions
       return;
     }
     if(raw===''){const q=planQty(m,k,(m.ing.find(x=>x[0]===k)||[k,0])[1]);if(q>0)items.push({k,q,sug:true});return}
@@ -2273,9 +2385,9 @@ function mealTotals(){
   const el=document.getElementById('mealTot');if(!el)return;
   const {items,bad,need}=mealRead(), x=itemsMacros(items);
   const date=(document.getElementById('logDate')||{}).value||isoToday(), day=dayTotals(date);
-  el.innerHTML=bad.length?`<span style="color:var(--amber)">Not a number: ${bad.map(esc).join(', ')}</span>`
-    :need.length?`<span style="color:var(--amber)">Type the amount: ${need.map(esc).join(', ')}</span>`
-    :`<b>${x.kc} kcal · ${x.p} g protein</b><br><span class="muted">Day after saving: ${day.kc+x.kc} / ${TGT.kcal} kcal · ${day.p+x.p} / ${TGT.prot} g protein</span>`;
+  el.innerHTML=bad.length?`<span style="color:var(--amber)">Nu e un număr: ${bad.map(esc).join(', ')}</span>`
+    :need.length?`<span style="color:var(--amber)">Scrie cantitatea: ${need.map(esc).join(', ')}</span>`
+    :`<b>${x.kc} kcal · ${x.p} g proteine</b><br><span class="muted">Ziua după salvare: ${day.kc+x.kc} / ${TGT.kcal} kcal · ${day.p+x.p} / ${TGT.prot} g proteine</span>`;
 }
 async function saveMeal(){
   const m=MEAL_BY[PICK];if(!m)return;
@@ -2284,13 +2396,13 @@ async function saveMeal(){
   let rec;
   if(m.kind==='free'){
     const t=document.getElementById('offT').value.trim(), q=numVal(document.getElementById('offQ').value);
-    if(!t){toast('Type what it was');return}
+    if(!t){toast('Scrie ce a fost');return}
     rec={date,time,code:m.code,portions:1,comment:'',kc:0,p:0,c:0,f:0,items:[],free:[{t,q:q>0?q:null}],ts:Date.now()};
   }else{
     const {items,bad,need}=mealRead();
-    if(bad.length){toast('Check the amount: '+bad[0]);return}
-    if(need.length){toast('Type the amount: '+need[0]);return}
-    if(!items.length){toast('Nothing to save');return}
+    if(bad.length){toast('Verifică cantitatea: '+bad[0]);return}
+    if(need.length){toast('Scrie cantitatea: '+need[0]);return}
+    if(!items.length){toast(m.kind==='snack'?'Alege cel puțin un aliment':'Nimic de salvat');return}
     rec={date,time,code:m.code,portions:1,comment:'',...itemsMacros(items),items,ts:Date.now()};
   }
   await put('meals',rec);
@@ -2301,19 +2413,19 @@ async function saveMeal(){
     if(time&&!isNaN(hh)&&!isNaN(mm))d.setHours(hh,mm,0,0);
     const mt=Math.min(Date.now(),d.getTime()), el=mt-FAST_ACTIVE.start, at=hmOf(mt);
     if(el>=4*H){
-      if(confirm('A fast is running: '+fmtHM(el)+' h at '+at+' (since '+fmtDT(FAST_ACTIVE.start)+').\n\nEnd it at '+at+'?\n\nOK = end the fast at '+at+'\nCancel = keep it running, end it yourself in Fast'))await endFast(mt);
+      if(confirm('Postul e în curs: '+fmtHM(el)+' h la '+at+' (de la '+fmtDT(FAST_ACTIVE.start)+').\n\nÎl închei la '+at+'?\n\nOK = postul se încheie la '+at+'\nCancel = continuă; îl închei tu din Fast'))await endFast(mt);
     }else if(el>60000){
-      if(confirm('A fast was started at '+hmOf(FAST_ACTIVE.start)+', before this meal ('+at+').\n\nMove the start of the fast to '+at+'?\n\nOK = the fast starts after this meal\nCancel = leave the fast as it is')){
+      if(confirm('Un post a pornit la '+hmOf(FAST_ACTIVE.start)+', înainte de această masă ('+at+').\n\nMuți începutul postului la '+at+'?\n\nOK = postul începe după această masă\nCancel = postul rămâne cum e')){
         FAST_ACTIVE.start=mt;FAST_ACTIVE.ed=true;await put('fasts',FAST_ACTIVE);await loadFasts();renderFast();
       }
     }
   }
   await loadMeals();PICK=null;renderPick();renderLog();
-  toast('Saved — '+dayLight(date).word);
+  toast('Salvat — '+dayLight(date).word);
   pageTop();   // the day light is at the top of the Log
 }
 async function deleteMeal(id){
-  if(!confirm('Delete this entry?'))return;
+  if(!confirm('Ștergi această înregistrare?'))return;
   await new Promise((res,rej)=>{const q=tx('meals','readwrite').delete(id);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)});
   await loadMeals();renderLog();mealTotals();
 }
@@ -2341,44 +2453,69 @@ const KCAL_FLOOR=1900, PROT_FLOOR=155, FAT_FLOOR=45, FIB_MIN=30, K_MIN=3500, MG_
 function dayLight(date){
   const t=dayTotals(date), T=TGT.kcal, P=TGT.prot;
   const closed=date<isoToday()||(date===isoToday()&&new Date().getHours()>=19);
-  let cls='g',word='GREEN';
-  if(!t.n){cls='o';word='NOTHING LOGGED'}
-  else if(t.kc>T+200){cls='r';word='RED'}
-  else if(t.kc>T+100){cls='w';word='WARN'}
-  else if(t.est){cls='o';word='OFF-PLAN'}
+  let cls='g',word='VERDE';
+  if(!t.n){cls='o';word=dayNote(date)?'DOAR NOTĂ':'NIMIC ÎNREGISTRAT'}
+  else if(t.kc>T+200){cls='r';word='ROȘU'}
+  else if(t.kc>T+100){cls='w';word='ATENȚIE'}
+  else if(t.est){cls='o';word='ÎN AFARA PLANULUI'}
   const lines=[];
   if(t.n){
     const d=T-t.kc, mi=dayMicros(date);
-    lines.push({x:`${t.kc} / ${T} kcal · `+(d>=0?d+' left':(-d)+' over')});
-    if(t.est)lines.push({x:'Off-plan food is not counted — the real total is higher',w:1});
+    lines.push({x:`${t.kc} / ${T} kcal · `+(d>=0?'mai sunt '+d:(-d)+' peste')});
+    if(t.est)lines.push({x:'Mâncarea din afara planului nu se numără — totalul real e mai mare',w:1});
     const pd=P-t.p;
-    lines.push({x:`Protein ${t.p} / ${P} g`+(pd>0?' · '+pd+' to go':' · reached'),w:closed&&!t.est&&t.p<PROT_FLOOR});
-    lines.push({x:`Carbs ${t.c} g · Fat ${t.f} g · Fibre ${mi.fib} g`,m:1});
-    if(t.kc<KCAL_FLOOR&&!t.est)lines.push(closed?{x:`Too low: ${KCAL_FLOOR-t.kc} kcal under the ${KCAL_FLOOR} minimum`,w:1}:{x:`${KCAL_FLOOR-t.kc} kcal to the ${KCAL_FLOOR} minimum`,m:1});
-    const low=[];if(t.f<FAT_FLOOR)low.push('fat');if(mi.fib<FIB_MIN)low.push('fibre');if(mi.K<K_MIN)low.push('potassium');if(mi.Mg<MG_MIN)low.push('magnesium');
-    if(!low.length)lines.push({x:'Fibre, potassium, magnesium: covered',ok:1});
-    else if(closed&&!t.est)lines.push({x:'Low today: '+low.join(', '),w:1});
+    lines.push({x:`Proteine ${t.p} / ${P} g`+(pd>0?' · mai sunt '+pd:' · atins'),w:closed&&!t.est&&t.p<PROT_FLOOR});
+    lines.push({x:`Carbohidrați ${t.c} g · Grăsimi ${t.f} g · Fibre ${mi.fib} g`,m:1});
+    if(t.kc<KCAL_FLOOR&&!t.est)lines.push(closed?{x:`Prea puțin: ${KCAL_FLOOR-t.kc} kcal sub minimul de ${KCAL_FLOOR}`,w:1}:{x:`${KCAL_FLOOR-t.kc} kcal până la minimul de ${KCAL_FLOOR}`,m:1});
+    const low=[];if(t.f<FAT_FLOOR)low.push('grăsimi');if(mi.fib<FIB_MIN)low.push('fibre');if(mi.K<K_MIN)low.push('potasiu');if(mi.Mg<MG_MIN)low.push('magneziu');
+    if(!low.length)lines.push({x:'Fibre, potasiu, magneziu: acoperite',ok:1});
+    else if(closed&&!t.est)lines.push({x:'Puțin azi: '+low.join(', '),w:1});
   }
   return {cls,word,lines,t};
 }
 function renderLog(){
   const dEl=document.getElementById('logDate');if(!dEl)return;
   const date=dEl.value||isoToday();
-  const ttl=document.getElementById('logTitle');if(ttl)ttl.textContent=date===isoToday()?'Today':fmtD(date);
+  const ttl=document.getElementById('logTitle');if(ttl)ttl.textContent=date===isoToday()?'Azi':fmtD(date);
   const L=dayLight(date);
   document.getElementById('dayLight').innerHTML=`<div class="light ${L.cls}"><div class="t">${L.word}</div>${L.lines.map(l=>`<div class="s${l.w?' w':''}${l.m?' m':''}${l.ok?' ok':''}">${l.x}</div>`).join('')}</div>`;
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const nameOf=m=>m.code==='LOG'?'Logged food':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
+  const nameOf=m=>m.code==='LOG'?'Aliment înregistrat':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
   document.getElementById('dayMeals').innerHTML=ms.map(m=>{
-    const det=[(m.items||[]).map(x=>(x.add?'+ ':'')+esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' pcs':' g')).join(' · '),
+    const det=[(m.items||[]).map(x=>(x.add?'+ ':'')+esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' buc':' g')).join(' · '),
                (m.free||[]).map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · '), m.comment?esc(m.comment):''].filter(Boolean).join('<br>');
     const notCounted=isOff(m)&&!(m.items&&m.items.length)&&!(m.kc>0);
     return `<div class="ml">
       <div style="flex:1;min-width:0" onclick="this.querySelector('.cm')&&this.querySelector('.cm').classList.toggle('hidden')">
         <div class="nm">${esc(nameOf(m))}${m.portions&&m.portions!==1?' × '+m.portions:''} <span class="muted" style="font-size:.78rem">${m.time||''}</span></div>
         ${m.free&&m.free.length?`<div class="cm">${m.free.map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · ')}</div>`:(det?`<div class="cm hidden">${det}</div>`:'')}</div>
-      <div class="mac">${notCounted?'<span class="muted">not counted</span>':`<b>${m.kc||0} kcal</b><br>${m.p||0} g P`}</div>
-      <button class="x" onclick="deleteMeal(${m.id})" aria-label="Delete">✕</button></div>`}).join('');
+      <div class="mac">${notCounted?'<span class="muted">nu se numără</span>':`<b>${m.kc||0} kcal</b><br>${m.p||0} g P`}</div>
+      <button class="x" onclick="deleteMeal(${m.id})" aria-label="Șterge">✕</button></div>`}).join('');
+  renderDayNote(date);
+}
+/* ---- v11.11 — day note: free text per date, for the assistant's analysis of the export.
+   Stored in settings 'dayNotes' = {'YYYY-MM-DD': {t, ts}}; exported with the settings, merged on import. ---- */
+let DAY_NOTES={}, NOTE_T=null;
+async function loadDayNotes(){const s=await get1('settings','dayNotes');DAY_NOTES=(s&&s.value&&typeof s.value==='object')?s.value:{}}
+function dayNote(date){return DAY_NOTES[date]&&DAY_NOTES[date].t||''}
+function renderDayNote(date){
+  const el=document.getElementById('dayNoteBox');if(!el)return;
+  if(el.dataset.date===date&&el.querySelector('textarea'))return;   // keep the box while typing
+  el.dataset.date=date;
+  el.innerHTML=`<div class="grp" style="margin-top:12px">Notă pentru ziua asta</div>
+    <textarea id="dayNoteT" rows="3" placeholder="Ex.: la nuntă, am mâncat sarmale și tort; n-am fost acasă, n-am înregistrat nimic." oninput="dayNoteInput()" onblur="saveDayNote()">${esc(dayNote(date))}</textarea>
+    <div class="muted" id="dayNoteS" style="font-size:.8rem;margin-top:4px">${dayNote(date)?'Salvată':'Se salvează automat; ajunge în export.'}</div>`;
+}
+function dayNoteInput(){clearTimeout(NOTE_T);const s=document.getElementById('dayNoteS');if(s)s.textContent='…';NOTE_T=setTimeout(saveDayNote,600)}
+async function saveDayNote(){
+  clearTimeout(NOTE_T);
+  const el=document.getElementById('dayNoteBox'), ta=document.getElementById('dayNoteT');if(!el||!ta)return;
+  const date=el.dataset.date, t=ta.value.trim();if(!date)return;
+  if(t===dayNote(date))return;
+  if(t)DAY_NOTES[date]={t,ts:Date.now()};else delete DAY_NOTES[date];
+  await put('settings',{key:'dayNotes',value:DAY_NOTES});
+  const s=document.getElementById('dayNoteS');if(s)s.textContent=t?'Salvată':'Ștearsă';
+  const L=document.querySelector('#dayLight .t');if(L)L.textContent=dayLight(date).word;
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
@@ -2402,20 +2539,20 @@ function renderShop(){
   const pl=document.getElementById('shopPlan');if(!pl)return;
   pl.innerHTML=PICK_GROUPS.map(([title,fn])=>{
     const ms=MEALS.filter(m=>fn(m)&&m.ing.length);if(!ms.length)return '';
-    const small=title==='Extras';
+    const small=title==='Extra';
     const btn=m=>{const c=SHOP.plan[m.code]||0;return small
       ?`<button class="chip ${c?'on':''}" onclick="shopCycle('${m.code}')">${esc(m.name)}${c?' ×'+c:''}</button>`
       :`<button class="pick ${c?'on':''}" onclick="shopCycle('${m.code}')"><span>${esc(m.name)}</span>${c?`<b>×${c}</b>`:''}</button>`};
-    return `<div class="grp">${title.replace(' · lunch + dinner','').replace('&','&amp;')}</div>`+(small?`<div class="chips">${ms.map(btn).join('')}</div>`:ms.map(btn).join(''));
+    return `<div class="grp">${title.replace(' · prânz + cină','').replace('&','&amp;')}</div>`+(small?`<div class="chips">${ms.map(btn).join('')}</div>`:ms.map(btn).join(''));
   }).join('');
   const need=shopNeed();
   const aisles=['Meat & fish','Dairy & eggs','Produce','Dry goods','Pantry','Staples'];
   const roundQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return Math.ceil(q);const st=g.a==='Staples'?10:50;return Math.ceil(q/st)*st};
-  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return q+' pcs';return q>=1000?(q/1000).toFixed(2).replace(/\.?0+$/,'')+' kg':q+' g'};
+  const fmtQ=(k,q)=>{const g=ING[k];if(g.u==='pcs')return q+' buc';return q>=1000?(q/1000).toFixed(2).replace(/\.?0+$/,'')+' kg':q+' g'};
   const row=k=>`<div class="shop${SHOP.got[k]?' ok':''}" onclick="shopTick('${k}')"><div class="box">${SHOP.got[k]?'✓':''}</div><div class="nm">${esc(ING[k].n)}</div><span class="q">${fmtQ(k,roundQ(k,need[k]))}</span></div>`;
   const html=aisles.map(a=>{const items=Object.keys(need).filter(k=>ING[k].a===a);if(!items.length)return '';
-    return `<div class="fgrp"><div class="hd">${a.replace('&','&amp;')}</div>${items.map(row).join('')}</div>`}).join('');
-  document.getElementById('shopList').innerHTML=html||'<div class="muted">Pick the meals above.</div>';
+    return `<div class="fgrp"><div class="hd">${esc(AISLE_RO[a]||a)}</div>${items.map(row).join('')}</div>`}).join('');
+  document.getElementById('shopList').innerHTML=html||'<div class="muted">Alege mesele de mai sus.</div>';
 }
 
 /* ============================================================
