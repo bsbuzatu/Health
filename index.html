@@ -244,6 +244,7 @@ textarea:focus{outline:none;border-color:var(--green)}
 .chip.on{background:var(--green);color:#000;border-color:var(--green)}
 .chip .c{color:var(--green);margin-right:6px}.chip.on .c{color:#0a3a00}
 .chip.oth{border-style:dashed}
+.chip.prd{border-color:var(--green-dim)}
 .ml{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #131813;align-items:flex-start}
 .ml .code{color:var(--green);font-weight:800;font-size:1rem;min-width:52px}
 .ml .nm{font-size:.9rem}
@@ -302,7 +303,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.11 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.12 · gym · fast · food</div>
   </header>
 
   <main>
@@ -760,7 +761,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const BUILD='2026-11-15-v11.11';
+const BUILD='2026-11-16-v11.12';
 
 /* ============================================================
    State
@@ -1676,7 +1677,7 @@ async function importJSON(){
     const fe=f.end==null?Infinity:f.end;
     if(iv.some(([a,b])=>f.start<b&&fe>a))continue;
     const c={...f};delete c.id;await put('fasts',c);fs.add(f.start);iv.push([f.start,fe]);okF++}
-  const mk=m=>(m.date||'')+'|'+(m.time||'')+'|'+(m.code||'');
+  const mk=m=>(m.date||'')+'|'+(m.time||'')+'|'+(m.code||'')+(m.prod&&m.prod.t?'|'+m.prod.t+'|'+m.prod.q:'');   // v11.12: two products at the same minute are two entries
   const ms=new Set((await all('meals')).map(mk));
   for(const m of (d.meals||[])){if(ms.has(mk(m)))continue;const c={...m};delete c.id;await put('meals',c);ms.add(mk(m));okMl++}
   for(const l of (d.labs||[])){if(!l.date)continue;const ex=await get1('labs',l.date)||{};await put('labs',{...l,...ex,date:l.date});okL++}
@@ -2219,6 +2220,7 @@ const MEALS=[
   {code:'XN', kind:'extra', name:'Nuts',           ing:[['nuts',15]], steps:[]},
   {code:'XR', kind:'extra', name:'Rye bread',      ing:[['rye',1]], steps:[]},
   {code:'SN', kind:'snack', name:'Snack',          ing:[], steps:[]},   // v11.11 — any allowed foods, typed grams
+  {code:'PRD',kind:'prod',  name:'Label product',  ing:[], steps:[]},   // v11.12 — any product: name, P/F/C per 100 g, grams
   {code:'OFF',kind:'free',  name:'Off-plan food',  ing:[], steps:[]},
 
   /* legacy codes — kept so older log entries still show their name; not offered any more */
@@ -2248,7 +2250,7 @@ const MEALS_RO={
   M9:['Pui · hrișcă · ciuperci · salată de sfeclă și morcov',['Hrișca: spălată, 1 : 2 apă, cu capac, 15 min, odihnă 5 min.','Ciupercile și ceapa în jumătate din ulei, tigaie încinsă 6–8 min, sare, cimbru.','Puiul: sare, piper; tigaie uscată sau cuptor 200 °C, 20–25 min.','Salata: morcov ras și sfeclă feliată, restul uleiului, lămâie.']],
   M10:['Curcan · cartofi · fasole verde · salată de vinete',['Vinetele: întregi în cuptor 220 °C, 40 min, curățate, tocate, amestecate cu ceapa tocată mărunt, sare și cea mai mare parte din ulei.','Cartofii: fierți în coajă 20 min. Fasolea verde: la abur 6–8 min.','Curcanul: sare, piper, boia; tigaie sau cuptor 200 °C, 15–20 min.','Roșiile alături. Împarte în 2 caserole.']],
   XV:['Legume crude',[]],XA:['Măr',[]],XB:['Fructe de pădure',[]],XN:['Nuci mixte',[]],XR:['Pâine de secară',[]],
-  SN:['Gustare',[]],OFF:['Mâncare în afara planului',[]],
+  SN:['Gustare',[]],PRD:['Produs (etichetă)',[]],OFF:['Mâncare în afara planului',[]],
   FREE:['Intrare liberă (veche)',[]],SHKN:['Shake + nuci (vechi)',[]],VAR:['Diverse (vechi)',[]],OTH:['Estimare (veche)',[]]
 };
 MEALS.forEach(m=>{const r=MEALS_RO[m.code];if(r){m.name=r[0];if(r[1].length)m.steps=r[1]}});
@@ -2299,7 +2301,7 @@ const PICK_GROUPS=[
   ['Dimineața',                       m=>m.kind==='shake'||m.kind==='eggs'],
   ['Oala lentă · prânz + cină',        m=>m.kind==='batch'&&m.grp==='crock'],
   ['Tigaie și cuptor · prânz + cină',  m=>m.kind==='batch'&&m.grp!=='crock'],
-  ['Extra',                           m=>m.kind==='extra'||m.kind==='snack'||m.kind==='free']
+  ['Extra',                           m=>m.kind==='extra'||m.kind==='snack'||m.kind==='prod'||m.kind==='free']
 ];
 let PICK=null;
 function initLogForm(){
@@ -2315,7 +2317,7 @@ function renderPick(){
       const ms=MEALS.filter(fn);if(!ms.length)return '';
       const small=title==='Extra';
       return `<div class="grp">${title.replace('&','&amp;')}</div>`+(small
-        ?`<div class="chips">${ms.map(m=>`<button class="chip${m.kind==='free'?' oth':''}" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join('')}</div>`
+        ?`<div class="chips">${ms.map(m=>`<button class="chip${m.kind==='free'?' oth':''}${m.kind==='prod'?' prd':''}" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join('')}</div>`
         :ms.map(m=>`<button class="pick" onclick="pickMeal('${m.code}')">${esc(m.name)}</button>`).join(''));
     }).join('');
     return;
@@ -2330,6 +2332,7 @@ function renderPick(){
       <div class="prow"><span class="nm muted">Cam cât</span><input type="text" inputmode="decimal" class="q" id="offQ" placeholder="—"><span class="u">g</span></div>`+foot;
     return;
   }
+  if(m.kind==='prod'){el.innerHTML=head+prodFormHTML()+foot;prodTotals();return}
   const snack=m.kind==='snack';
   el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${snack?'Alege alimentele din listă și scrie cantitatea crudă a fiecăruia.':(m.kind==='batch'?'<b>Tot ce gătești</b> = prânz + cină. ':'')+'Cantități crude. Lasă căsuța goală ca să salvezi cantitatea afișată; scrie alta unde diferă.'}</div>`+
     m.ing.map(([k,q])=>`<div class="prow" data-k="${k}"><span class="nm">${esc(ING[k].n)}</span>
@@ -2361,6 +2364,69 @@ function addIng(k){
   const i=r.querySelector('input');if(i)i.focus();
 }
 function rmIng(b){const r=b.closest('.prow');if(r)r.remove();fillAddSel();mealTotals()}
+/* ---- v11.12 — PRODUS (ETICHETĂ): any product, from its label.
+   Name, protein / fat / carbs per 100 g, grams eaten → counted in the day like any meal.
+   kcal = 4·P + 9·G + 4·C (the label's kcal is not asked; it can differ by a few %).
+   Products saved before are offered by name: their per-100 g values show as placeholders and an
+   empty box takes the shown value (same rule as the meal weights). Grams must always be typed.
+   Record: {date,time,code:'PRD',portions:1,comment:'',kc,p,c,f,items:[],prod:{t,p,f,c,q},ts}
+   prod.p/f/c = per 100 g, prod.q = grams eaten. Never off-plan. No new store: the product list is
+   built from the saved PRD entries (newest values win). ---- */
+function prodKnown(){
+  const by={};
+  MEALS_ALL.filter(m=>m.prod&&m.prod.t).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(m=>{by[m.prod.t.trim().toLowerCase()]=m.prod});
+  return Object.values(by).sort((a,b)=>a.t.localeCompare(b.t,'ro',{sensitivity:'base'}));
+}
+function prodFind(t){t=(t||'').trim().toLowerCase();return t?prodKnown().find(x=>x.t.trim().toLowerCase()===t)||null:null}
+function prodFormHTML(){
+  const kn=prodKnown();
+  const box=(id,lbl,u)=>`<div class="prow"><span class="nm">${lbl}</span><input type="text" inputmode="decimal" class="q" id="${id}" placeholder="—" oninput="prodTotals()"><span class="u">${u}</span></div>`;
+  return `<div class="muted" style="margin-bottom:8px">Orice produs: numele și valorile de pe etichetă <b>la 100 g</b>, apoi cât ai mâncat. Se numără în ziua aleasă sus.</div>
+    <input type="text" id="prdT" list="prdList" placeholder="numele produsului" oninput="prodPick()" autocomplete="off">
+    <datalist id="prdList">${kn.map(x=>`<option value="${esc(x.t)}"></option>`).join('')}</datalist>
+    ${kn.length?`<div class="muted" style="font-size:.8rem;margin:4px 0 2px">Produsele salvate apar când scrii numele; valorile lor apar în căsuțe — lasă goală ca să le păstrezi.</div>`:''}
+    <div class="grp" style="margin-top:10px">La 100 g</div>
+    ${box('prdP','Proteine','g')}${box('prdF','Grăsimi','g')}${box('prdC','Carbohidrați','g')}
+    <div class="grp" style="margin-top:10px">Cât ai mâncat</div>
+    ${box('prdQ','Cantitate','g')}
+    <div class="muted" id="prdLast" style="font-size:.8rem"></div>
+    <div class="tot" id="prdTot"></div>`;
+}
+function prodPick(){
+  const k=prodFind((document.getElementById('prdT')||{}).value);
+  [['prdP','p'],['prdF','f'],['prdC','c']].forEach(([id,f])=>{const i=document.getElementById(id);if(i)i.placeholder=k?String(k[f]):'—'});
+  const l=document.getElementById('prdLast');if(l)l.textContent=k?'Ultima dată: '+k.q+' g':'';
+  prodTotals();
+}
+function prodRead(){
+  const t=((document.getElementById('prdT')||{}).value||'').trim(), k=prodFind(t);
+  const val=(id,f)=>{const i=document.getElementById(id);const raw=i?i.value.trim():'';
+    if(raw==='')return k?k[f]:null;const v=numVal(raw);return v==null?NaN:v};
+  const p=val('prdP','p'), f=val('prdF','f'), c=val('prdC','c');
+  const qr=((document.getElementById('prdQ')||{}).value||'').trim(), q=qr===''?null:numVal(qr);
+  const need=[];
+  if(!t)return {err:'Scrie numele produsului'};
+  [['proteine',p],['grăsimi',f],['carbohidrați',c]].forEach(([n,v])=>{if(v==null)need.push(n)});
+  if(need.length)return {err:'Scrie la 100 g: '+need.join(', ')};
+  const bad=[['proteine',p],['grăsimi',f],['carbohidrați',c]].filter(([n,v])=>isNaN(v)||v<0||v>100).map(x=>x[0]);
+  if(bad.length)return {err:'Valoare greșită la 100 g: '+bad.join(', ')};
+  if(p+f+c>100.5)return {err:'Proteine + grăsimi + carbohidrați depășesc 100 g la 100 g'};
+  if(qr==='')return {err:'Scrie câte grame ai mâncat'};
+  if(q==null||isNaN(q)||q<=0||q>3000)return {err:'Cantitatea trebuie să fie între 1 și 3000 g'};
+  const r1=x=>Math.round(x*10)/10;
+  return {prod:{t,p:r1(p),f:r1(f),c:r1(c),q:Math.round(q)}};
+}
+function prodMacros(x){
+  const m=x.q/100, p=x.p*m, f=x.f*m, c=x.c*m;
+  return {kc:Math.round(4*p+9*f+4*c),p:Math.round(p),c:Math.round(c),f:Math.round(f)};
+}
+function prodTotals(){
+  const el=document.getElementById('prdTot');if(!el)return;
+  const r=prodRead();
+  if(r.err){const quiet=/^Scrie/.test(r.err);el.innerHTML=`<span style="color:${quiet?'var(--muted)':'var(--amber)'}">${esc(r.err)}</span>`;return}
+  const x=prodMacros(r.prod), date=(document.getElementById('logDate')||{}).value||isoToday(), day=dayTotals(date);
+  el.innerHTML=`<b>${x.kc} kcal · ${x.p} g proteine</b> <span class="muted">· ${x.c} g carbohidrați · ${x.f} g grăsimi</span><br><span class="muted">Ziua după salvare: ${day.kc+x.kc} / ${TGT.kcal} kcal · ${day.p+x.p} / ${TGT.prot} g proteine</span>`;
+}
 /* an empty box = the planned weight (sug); a typed number replaces it; 0 leaves the food out */
 function mealRead(){
   const m=MEAL_BY[PICK], items=[], bad=[], need=[];
@@ -2398,6 +2464,10 @@ async function saveMeal(){
     const t=document.getElementById('offT').value.trim(), q=numVal(document.getElementById('offQ').value);
     if(!t){toast('Scrie ce a fost');return}
     rec={date,time,code:m.code,portions:1,comment:'',kc:0,p:0,c:0,f:0,items:[],free:[{t,q:q>0?q:null}],ts:Date.now()};
+  }else if(m.kind==='prod'){
+    const r=prodRead();
+    if(r.err){toast(r.err);return}
+    rec={date,time,code:m.code,portions:1,comment:'',...prodMacros(r.prod),items:[],prod:r.prod,ts:Date.now()};
   }else{
     const {items,bad,need}=mealRead();
     if(bad.length){toast('Verifică cantitatea: '+bad[0]);return}
@@ -2480,10 +2550,12 @@ function renderLog(){
   const L=dayLight(date);
   document.getElementById('dayLight').innerHTML=`<div class="light ${L.cls}"><div class="t">${L.word}</div>${L.lines.map(l=>`<div class="s${l.w?' w':''}${l.m?' m':''}${l.ok?' ok':''}">${l.x}</div>`).join('')}</div>`;
   const ms=MEALS_ALL.filter(m=>m.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const nameOf=m=>m.code==='LOG'?'Aliment înregistrat':(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
+  const nameOf=m=>m.code==='LOG'?'Aliment înregistrat':m.prod&&m.prod.t?m.prod.t:(MEAL_BY[m.code]?MEAL_BY[m.code].name:m.code);
   document.getElementById('dayMeals').innerHTML=ms.map(m=>{
     const det=[(m.items||[]).map(x=>(x.add?'+ ':'')+esc(ING[x.k]?ING[x.k].n:x.k)+' '+x.q+(unitOf(x.k)==='pcs'?' buc':' g')).join(' · '),
-               (m.free||[]).map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · '), m.comment?esc(m.comment):''].filter(Boolean).join('<br>');
+               (m.free||[]).map(x=>esc(x.t)+(x.q?' '+x.q+' g':'')).join(' · '),
+               m.prod?`${m.prod.q} g · la 100 g: P ${m.prod.p} · G ${m.prod.f} · C ${m.prod.c} → C ${m.c||0} g · G ${m.f||0} g`:'',
+               m.comment?esc(m.comment):''].filter(Boolean).join('<br>');
     const notCounted=isOff(m)&&!(m.items&&m.items.length)&&!(m.kc>0);
     return `<div class="ml">
       <div style="flex:1;min-width:0" onclick="this.querySelector('.cm')&&this.querySelector('.cm').classList.toggle('hidden')">

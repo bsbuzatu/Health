@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-15-v11.11`
+**Build:** `2026-11-16-v11.12`
 **Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
@@ -14,11 +14,21 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 |---|---|
 | **Gym** | Week plan, next session (A→B→C rotation), run a Full-Body session, Zone 2 timer or manual walk entry |
 | **Fast** | Start / end a fast (16 h target), resume a fast ended by mistake, edit or delete any fast, add one that was not timed, 7-day figures, full history |
-| **Food** | **Log**: tap a preset meal, its ingredients open with the planned raw weights, save as shown or type your own · **Shop**: tap the meals you will cook, get the summed raw-weight list with tick boxes |
+| **Food** | **Log**: tap a preset meal, its ingredients open with the planned raw weights, save as shown or type your own; **Produs (etichetă)** for any product from its label · **Shop**: tap the meals you will cook, get the summed raw-weight list with tick boxes |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.12 (16 Nov 2026)
+
+- **Produs (etichetă)** in Food → Log → Extra (`code:'PRD'`, `kind:'prod'`): log any product from its label — name, **protein / fat / carbs per 100 g**, and the grams eaten. The app computes the portion (kcal = 4·P + 9·F + 4·C) and counts it in the day's totals and day light like any meal; never off-plan.
+- Live preview: the portion's kcal, protein, carbs and fat, and the day after saving.
+- **Saved products are reused**: typing a name already logged shows its per-100 g values as placeholders (empty box = keep the shown value; newest values win) and the last grams as a hint. Grams are always typed. No new store — the list is built from the saved `PRD` entries.
+- Validation: name required; each value 0–100; P + F + C ≤ 100; grams 1–3000; a non-number blocks the save.
+- Record: `{date,time,code:'PRD',portions:1,comment:'',kc,p,c,f,items:[],prod:{t,p,f,c,q},ts}` — `prod` holds the per-100 g values and the grams eaten. The log shows the product name; tap it for grams and per-100 g values.
+- Import de-duplication key now includes the product name and grams for `PRD` entries, so two products logged in the same minute both survive. Other records de-duplicate as before.
+- Fibre and minerals are not asked for products, so they do not count toward the fibre / potassium / magnesium line. Shop list unaffected. Stores, export v4, presets, targets, Gym and Fast unchanged.
 
 ## v11.11 (15 Nov 2026)
 
