@@ -245,6 +245,9 @@ textarea:focus{outline:none;border-color:var(--green)}
 .chip .c{color:var(--green);margin-right:6px}.chip.on .c{color:#0a3a00}
 .chip.oth{border-style:dashed}
 .chip.prd{border-color:var(--green-dim)}
+.prdChips{max-height:210px;overflow-y:auto;margin:8px 0 4px}
+.prdChips .chip small{color:var(--muted);font-weight:500;margin-left:6px}
+.prdChips .chip.on small{color:#0a3a00}
 .ml{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #131813;align-items:flex-start}
 .ml .code{color:var(--green);font-weight:800;font-size:1rem;min-width:52px}
 .ml .nm{font-size:.9rem}
@@ -303,7 +306,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.12 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.13 · gym · fast · food</div>
   </header>
 
   <main>
@@ -761,7 +764,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const BUILD='2026-11-16-v11.12';
+const BUILD='2026-11-17-v11.13';
 
 /* ============================================================
    State
@@ -822,6 +825,7 @@ async function boot(){
   initStatsForm();initLabForm();initLogForm();
   let fastFixed=0;try{fastFixed=await fastSanitize()}catch(e){}
   await Promise.all([loadFasts(),loadMeals(),loadLabs(),loadShop(),loadDayNotes()]);
+  await loadProducts();
   renderFast();renderLog();
   await renderStats();
   await renderDiag();
@@ -1690,8 +1694,15 @@ async function importJSON(){
     const nb=document.getElementById('dayNoteBox');if(nb)nb.dataset.date='';
   }
 
+  /* v11.13 — product library: merged by name, newest ts wins (a removal is a newer ts too) */
+  if(d.settings&&d.settings.products&&typeof d.settings.products==='object'){
+    const s0=await get1('settings','products'), cur=(s0&&s0.value&&typeof s0.value==='object')?s0.value:{};let ch=0;
+    Object.values(d.settings.products).forEach(x=>{if(!x||!x.t)return;const k=prodKey(x.t);
+      if(!cur[k]||(x.ts||0)>(cur[k].ts||0)){cur[k]=x.del?{t:String(x.t),del:true,ts:x.ts||0}:{t:String(x.t).trim(),p:+x.p||0,f:+x.f||0,c:+x.c||0,q:+x.q||0,ts:x.ts||0};ch++}});
+    if(ch)await put('settings',{key:'products',value:cur});
+  }
   try{await fastSanitize()}catch(e){}
-  await buildLastMap();await renderRecent();await Promise.all([loadFasts(),loadMeals(),loadLabs()]);renderFast();renderLog();
+  await buildLastMap();await renderRecent();await Promise.all([loadFasts(),loadMeals(),loadLabs()]);await loadProducts();renderFast();renderLog();
   await renderStats();await renderDiag();await renderSessions();
   alert(`Restored.\nWorkouts added: ${okW}\nMeasurements: ${okM}\nFasts: ${okF}\nMeals: ${okMl}\nLab dates: ${okL}\nLegacy entries: ${okE}`);
 }
@@ -1714,7 +1725,7 @@ async function wipe(){
   if(!confirm('Delete ALL local data? Irreversible.'))return;
   if(!confirm('Sure? Export first.'))return;
   await Promise.all([clearS('workouts'),clearS('metrics'),clearS('entries'),clearS('fasts'),clearS('meals'),clearS('labs')]);
-  await buildLastMap();await renderRecent();await Promise.all([loadFasts(),loadMeals(),loadLabs()]);renderFast();renderLog();
+  await buildLastMap();await renderRecent();await Promise.all([loadFasts(),loadMeals(),loadLabs()]);await loadProducts();renderFast();renderLog();
   await renderStats();await renderDiag();await renderSessions();
   toast('Deleted');
 }
@@ -2332,7 +2343,7 @@ function renderPick(){
       <div class="prow"><span class="nm muted">Cam cât</span><input type="text" inputmode="decimal" class="q" id="offQ" placeholder="—"><span class="u">g</span></div>`+foot;
     return;
   }
-  if(m.kind==='prod'){el.innerHTML=head+prodFormHTML()+foot;prodTotals();return}
+  if(m.kind==='prod'){el.innerHTML=head+prodFormHTML()+foot;prodPick();return}
   const snack=m.kind==='snack';
   el.innerHTML=head+`<div class="muted" style="margin-bottom:4px">${snack?'Alege alimentele din listă și scrie cantitatea crudă a fiecăruia.':(m.kind==='batch'?'<b>Tot ce gătești</b> = prânz + cină. ':'')+'Cantități crude. Lasă căsuța goală ca să salvezi cantitatea afișată; scrie alta unde diferă.'}</div>`+
     m.ing.map(([k,q])=>`<div class="prow" data-k="${k}"><span class="nm">${esc(ING[k].n)}</span>
@@ -2372,19 +2383,32 @@ function rmIng(b){const r=b.closest('.prow');if(r)r.remove();fillAddSel();mealTo
    Record: {date,time,code:'PRD',portions:1,comment:'',kc,p,c,f,items:[],prod:{t,p,f,c,q},ts}
    prod.p/f/c = per 100 g, prod.q = grams eaten. Never off-plan. No new store: the product list is
    built from the saved PRD entries (newest values win). ---- */
-function prodKnown(){
-  const by={};
-  MEALS_ALL.filter(m=>m.prod&&m.prod.t).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(m=>{by[m.prod.t.trim().toLowerCase()]=m.prod});
-  return Object.values(by).sort((a,b)=>a.t.localeCompare(b.t,'ro',{sensitivity:'base'}));
+/* v11.13 — PRODUCT LIBRARY. Every product saved once is kept in settings 'products'
+   = {'name lowercase': {t,p,f,c,q,ts,del?}} and offered as a tap list in Produs (etichetă),
+   most recently used first; typing filters the list. It no longer depends on the log: deleting an
+   entry keeps the product. "Scoate din listă" leaves a tombstone {del:true,ts} so the product does
+   not come back from old entries; logging it again restores it. Seeded from the PRD entries
+   (newest wins), exported with the settings, merged on import (newest ts wins). */
+let PRODS={};
+const prodKey=t=>(t||'').trim().toLowerCase();
+async function loadProducts(){
+  const s=await get1('settings','products');
+  PRODS=(s&&s.value&&typeof s.value==='object')?s.value:{};
+  let ch=0;
+  MEALS_ALL.filter(m=>m.prod&&m.prod.t).forEach(m=>{
+    const k=prodKey(m.prod.t), ex=PRODS[k], ts=m.ts||0;
+    if(!ex||ts>(ex.ts||0)){PRODS[k]={t:m.prod.t.trim(),p:m.prod.p,f:m.prod.f,c:m.prod.c,q:m.prod.q,ts};ch++}
+  });
+  if(ch)await put('settings',{key:'products',value:PRODS});
 }
-function prodFind(t){t=(t||'').trim().toLowerCase();return t?prodKnown().find(x=>x.t.trim().toLowerCase()===t)||null:null}
+async function prodRemember(x){PRODS[prodKey(x.t)]={t:x.t,p:x.p,f:x.f,c:x.c,q:x.q,ts:Date.now()};await put('settings',{key:'products',value:PRODS})}
+function prodKnown(){return Object.values(PRODS).filter(x=>x&&x.t&&!x.del).sort((a,b)=>(b.ts||0)-(a.ts||0))}
+function prodFind(t){const x=PRODS[prodKey(t)];return x&&!x.del?x:null}
 function prodFormHTML(){
-  const kn=prodKnown();
   const box=(id,lbl,u)=>`<div class="prow"><span class="nm">${lbl}</span><input type="text" inputmode="decimal" class="q" id="${id}" placeholder="—" oninput="prodTotals()"><span class="u">${u}</span></div>`;
-  return `<div class="muted" style="margin-bottom:8px">Orice produs: numele și valorile de pe etichetă <b>la 100 g</b>, apoi cât ai mâncat. Se numără în ziua aleasă sus.</div>
-    <input type="text" id="prdT" list="prdList" placeholder="numele produsului" oninput="prodPick()" autocomplete="off">
-    <datalist id="prdList">${kn.map(x=>`<option value="${esc(x.t)}"></option>`).join('')}</datalist>
-    ${kn.length?`<div class="muted" style="font-size:.8rem;margin:4px 0 2px">Produsele salvate apar când scrii numele; valorile lor apar în căsuțe — lasă goală ca să le păstrezi.</div>`:''}
+  return `<div class="muted" style="margin-bottom:8px">Orice produs: numele și valorile de pe etichetă <b>la 100 g</b>, apoi cât ai mâncat. Se numără în ziua aleasă sus. Produsul rămâne salvat pentru data viitoare.</div>
+    <div id="prdSaved"></div>
+    <input type="text" id="prdT" placeholder="numele produsului (nou sau caută)" oninput="prodPick()" autocomplete="off" autocorrect="off">
     <div class="grp" style="margin-top:10px">La 100 g</div>
     ${box('prdP','Proteine','g')}${box('prdF','Grăsimi','g')}${box('prdC','Carbohidrați','g')}
     <div class="grp" style="margin-top:10px">Cât ai mâncat</div>
@@ -2392,11 +2416,34 @@ function prodFormHTML(){
     <div class="muted" id="prdLast" style="font-size:.8rem"></div>
     <div class="tot" id="prdTot"></div>`;
 }
+function prodChips(){
+  const el=document.getElementById('prdSaved');if(!el)return;
+  const kn=prodKnown();
+  if(!kn.length){el.innerHTML='';return}
+  const typed=prodKey((document.getElementById('prdT')||{}).value), sel=prodFind(typed);
+  const list=sel?kn:kn.filter(x=>!typed||prodKey(x.t).includes(typed));
+  el.innerHTML=`<div class="grp">Produse salvate (${kn.length}) — atinge unul</div>
+    <div class="chips prdChips">${list.map(x=>`<button class="chip prd${sel&&prodKey(sel.t)===prodKey(x.t)?' on':''}" data-k="${esc(prodKey(x.t))}" onclick="prodSel(this.dataset.k)">${esc(x.t)}<small>${x.p}P · ${x.f}G · ${x.c}C</small></button>`).join('')||'<span class="muted" style="font-size:.85rem">Niciun produs salvat cu acest nume — completează valorile și se salvează.</span>'}</div>
+    ${sel?`<button class="btn ghost" style="width:auto;padding:6px 10px;font-size:.8rem;margin:2px 0 6px" onclick="prodForget()">Scoate „${esc(sel.t)}” din listă</button>`:''}`;
+}
+function prodSel(k){
+  const x=PRODS[k], i=document.getElementById('prdT');if(!x||!i)return;
+  const same=prodKey(i.value)===k;i.value=same?'':x.t;
+  ['prdP','prdF','prdC'].forEach(id=>{const b=document.getElementById(id);if(b)b.value=''});
+  prodPick();
+  if(!same){const q=document.getElementById('prdQ');if(q)q.focus()}
+}
+async function prodForget(){
+  const i=document.getElementById('prdT'), x=prodFind(i&&i.value);if(!x)return;
+  if(!confirm('Scoți „'+x.t+'” din lista de produse?\nÎnregistrările din jurnal rămân.'))return;
+  PRODS[prodKey(x.t)]={t:x.t,del:true,ts:Date.now()};await put('settings',{key:'products',value:PRODS});
+  i.value='';prodPick();toast('Scos din listă');
+}
 function prodPick(){
   const k=prodFind((document.getElementById('prdT')||{}).value);
   [['prdP','p'],['prdF','f'],['prdC','c']].forEach(([id,f])=>{const i=document.getElementById(id);if(i)i.placeholder=k?String(k[f]):'—'});
-  const l=document.getElementById('prdLast');if(l)l.textContent=k?'Ultima dată: '+k.q+' g':'';
-  prodTotals();
+  const l=document.getElementById('prdLast');if(l)l.textContent=k?'Valorile salvate apar în căsuțe — lasă goală ca să le păstrezi. Ultima dată: '+k.q+' g':'';
+  prodChips();prodTotals();
 }
 function prodRead(){
   const t=((document.getElementById('prdT')||{}).value||'').trim(), k=prodFind(t);
@@ -2468,6 +2515,7 @@ async function saveMeal(){
     const r=prodRead();
     if(r.err){toast(r.err);return}
     rec={date,time,code:m.code,portions:1,comment:'',...prodMacros(r.prod),items:[],prod:r.prod,ts:Date.now()};
+    await prodRemember(r.prod);   // v11.13 — kept in the product library
   }else{
     const {items,bad,need}=mealRead();
     if(bad.length){toast('Verifică cantitatea: '+bad[0]);return}

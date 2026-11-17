@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-16-v11.12`
+**Build:** `2026-11-17-v11.13`
 **Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
@@ -19,6 +19,14 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.13 (17 Nov 2026)
+
+- **Product library.** Every product saved in **Produs (etichetă)** is remembered and shown as a tap list (**Produse salvate**) at the top of the form, most recently used first, with its per-100 g P · F · C. Tap one → name filled, label values shown as placeholders (empty box = keep them), type the grams, save. Typing a name filters the list; a name not in the list is a new product and is saved on first use.
+- The library no longer depends on the log: it lives in `settings.products = {'name lowercase': {t,p,f,c,q,ts}}`. Deleting a log entry keeps the product. Logging a product again with new values updates it (newest wins).
+- **Scoate din listă** (shown under the list when a product is selected) removes it from the library only; log entries stay. A removal is kept as `{t,del:true,ts}` so the product does not return from old entries; logging it again restores it.
+- First launch seeds the library from the existing `PRD` entries. Export: carried in `settings` (export v4 unchanged). Import: merged by name, newest `ts` wins (removals included).
+- The iOS-unreliable `<datalist>` is gone. Grams are still always typed. Stores, presets, targets, Gym and Fast unchanged; the Zero fasting history (289 fasts) is untouched.
 
 ## v11.12 (16 Nov 2026)
 
