@@ -1,9 +1,9 @@
 # Healthy Life — training, fasting and food log
 
-Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset meals. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
+Single-file offline PWA for strength training, Zone 2 cardio, fasting and food logging. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
-**Live:** https://bsbuzatu.github.io/Feeder/
-**Build:** `2026-11-17-v11.13`
+**Live:** https://bsbuzatu.github.io/Health/
+**Build:** `2026-11-20-v11.14`
 **Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
@@ -14,11 +14,19 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and preset
 |---|---|
 | **Gym** | Week plan, next session (A→B→C rotation), run a Full-Body session, Zone 2 timer or manual walk entry |
 | **Fast** | Start / end a fast (16 h target), resume a fast ended by mistake, edit or delete any fast, add one that was not timed, 7-day figures, full history |
-| **Food** | **Log**: tap a preset meal, its ingredients open with the planned raw weights, save as shown or type your own; **Produs (etichetă)** for any product from its label · **Shop**: tap the meals you will cook, get the summed raw-weight list with tick boxes |
+| **Food** | **Jurnal**: dashboard (kcal, protein, carbs, fat: eaten / target / left); add food by food from the allowed list A→Z with raw grams, each saved at once; **Produs (etichetă)** for any product from its label; off-plan entry; day note · **Meniuri**: every menu with raw ingredients, macros and steps; 🛒 marks the days you cook it → summed raw-weight shopping list with tick boxes |
 | **Stats** | Body composition, waist, Health card (FibroScan / CAP / labs vs targets), fasting and intake averages, volume |
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.14 (20 Nov 2026)
+
+- **Gym — no cable work in the programs** (several cable stations with different pulleys made loads non-comparable). Session C: Rope Triceps Pushdown → **Overhead DB Triceps Extension** (`ohTri`, plan 30×10 / 25×13, 10–15 reps, 75 s); Face Pull → **Chest-Supported DB Reverse Fly** (new id `csRevFly`, face down on a 30–45° incline bench, plan 8×12 / 6×15, 12–20 reps). Go-to plan (paused): same two swaps in C, and Pallof Press → **Suitcase Hold** (new id `suitcase`, one dumbbell, 30–40 s per side). Weekly sets per muscle unchanged. Old ids stay in the catalogue so history reads as before.
+- **Suggested sets say which number was accepted:** `sug:true` = kg and reps both accepted, `sug:'w'` = kg accepted / reps typed, `sug:'r'` = reps accepted / kg typed; typed sets carry no flag. History shows "kg as suggested" / "reps as suggested".
+- **Food → Jurnal rebuilt, food by food.** Dashboard at the top: calories, protein, carbs and fat as eaten / target / left with bars; carbs target = kcal left after protein and fat (2,150 − 4·165 − 9·70 → 215 g). New **fat target** in Settings (default 70 g). Picker: search box (diacritics ignored) + A→Z dropdown of the allowed foods, raw grams (pieces for eggs, garlic, lemon, rye slice), live preview, **Adaugă** saves the food at once as `{code:'LOG', items:[{k,q}]}` (same shape as the v11.7 entries) and resets the form. The fast question on the first food of the day is asked once per fast. Produs (etichetă), off-plan entry and day note unchanged. Preset meals are no longer logged; old entries render as before.
+- **Food → Meniuri** replaces Cumpărături: every menu (morning, crock-pot, pan & oven, extras) as a fold-out card with raw ingredients per portion and for the whole cook, macros per portion and the cooking steps; 🛒 cycles 0–3 days and feeds the shopping list below (same `settings.shop`).
+- Stores, export v4, import, Fast and Stats unchanged.
 
 ## v11.13 (17 Nov 2026)
 
