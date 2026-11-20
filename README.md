@@ -3,7 +3,7 @@
 Single-file offline PWA for strength training, Zone 2 cardio, fasting and food logging. No build step, no dependencies, no backend. All data lives in the browser (IndexedDB) and never leaves the device.
 
 **Live:** https://bsbuzatu.github.io/Health/
-**Build:** `2026-11-20-v11.14`
+**Build:** `2026-11-20-v11.14.1`
 **Repo:** `bsbuzatu/Health` (renamed from `feeder`, 11.2026) · app: https://bsbuzatu.github.io/Health/
 
 ---
@@ -19,6 +19,12 @@ Single-file offline PWA for strength training, Zone 2 cardio, fasting and food l
 | **Settings** | Targets (kcal, protein, fast hours, goal weight), export / import JSON v4, deload, Zone 2 calibration, wipe |
 
 ---
+
+## v11.14.1 (20 Nov 2026)
+
+- **Today's target, worked out by the app** (replaces "boxes show last time's values"). Double progression, reps first, per set, over the sessions of the current phase: target hit → +1 rep, or +1 increment of kg once the reps reach the top of the range (top set restarts at the bottom of the range, back-off mid-range); target missed → repeat it; 3 misses in a row → −10 % (rounded down to the increment). A back-off set gains kg only while it stays ≥ ~10 % under today's top set, else it holds at the top of its range. Deload: no increase; deload sessions are not judged. Sessions logged before this build are judged against what they showed (the previous session's values).
+- Each exercise shows **Today: Top 60×9 +1 rep · Back 50×10 repeat — not hit last time**, above the last session's values. Tap ○ with empty boxes = did it as shown; type what you did otherwise — the next target follows from what was logged.
+- Each logged set now stores the target it was given (`tw`, `tr`) next to what was done.
 
 ## v11.14 (20 Nov 2026)
 

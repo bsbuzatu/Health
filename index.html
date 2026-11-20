@@ -229,6 +229,7 @@ td{padding:8px 4px;border-bottom:1px solid #131813;text-align:right;font-variant
 .histDetail{border-bottom:1px solid #131813;padding:4px 0 12px}
 .histDetail .ex{padding:8px 0 2px;color:var(--txt);font-weight:600;font-size:.95rem}
 .histDetail .tg{color:var(--muted);font-size:.8rem}
+.today .tg{color:var(--green);font-size:.78rem;font-weight:600}
 .histDetail .st{font-variant-numeric:tabular-nums;font-size:.95rem;padding:2px 0 2px 12px}
 .histDetail .st.wu{color:var(--muted);font-size:.85rem}
 .histDetail .note{color:var(--muted);font-size:.85rem;padding:6px 0 0;font-style:italic}
@@ -328,7 +329,7 @@ input[type=date]{color-scheme:dark}
   <header>
     <h2 id="hTitle">Gym</h2>
     <div class="sub" id="hSub"></div>
-    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.14 · gym · fast · food</div>
+    <div class="muted" style="font-size:.66rem;letter-spacing:.08em;margin-top:2px">Healthy Life · v11.14.1 · gym · fast · food</div>
   </header>
 
   <main>
@@ -796,7 +797,7 @@ const MUSCLE_TARGET={quads:6, hamstrings:4, chest:4, back:6, delts:6, glutes:2, 
 /* ============================================================
    ALIMENTE — permise pentru masa slaba + pierdere viscerala
    ============================================================ */
-const BUILD='2026-11-20-v11.14';
+const BUILD='2026-11-20-v11.14.1';
 
 /* ============================================================
    State
@@ -984,7 +985,7 @@ async function buildLastMap(){
       if(!id)return;
       const sets=(e.sets||[]).filter(s=>s.done&&(s.weight!=null||s.reps!=null));
       if(!sets.length)return;
-      lastMap[id]={date:w.date,prog:w.prog||null,sets:sets.map(s=>({w:s.weight,r:s.reps})),prev:lastMap[id]||null};
+      lastMap[id]={date:w.date,prog:w.prog||null,deload:!!w.deload,sets:sets.map(s=>({w:s.weight,r:s.reps,tw:s.tw,tr:s.tr})),prev:lastMap[id]||null};
     });
   });
 }
@@ -1018,22 +1019,64 @@ function workingOf(L){
    set j shows set j of that last session, verbatim. Otherwise the phase plan (starting
    targets). Old-program sessions (three ramped sets) are never mapped onto top/back-off.
    The value sits in the placeholder; ticking a set with empty boxes logs it (sug:true). */
+/* v11.14.1 — TODAY'S TARGET (user, 20.11.2026: "I want the app to tell me what to do today").
+   Double progression, reps first, set by set, on the sessions of the current phase:
+     hit last target (reps ≥ target reps at ≥ target kg)
+       · reps below the top of the range  → same kg, +1 rep
+       · reps at the top of the range     → +1 step of kg (exercise increment), reps back to the bottom
+     missed it                            → repeat the same target
+     3 misses in a row                    → −10 % (rounded down to the increment), reps at the bottom
+   A back-off set gains kg only while it stays ≥ ~10 % under today's top set (else it holds at the
+   top of its range); after a kg step or a −10 % it restarts mid-range.
+   are skipped when judging hit / miss. The first phase session's target is the plan; for sessions
+   logged before v11.14.1 the target shown then was the previous session's values (v11.6 rule), so
+   that is what they are judged against. Each set saves the target it was given (tw, tr). */
+function rnd2(x){return Math.round(x*100)/100}
+function progStep(t,a,miss,rg,inc,back){
+  const tw=t.w==null?0:t.w, aw=a.w==null?0:a.w;
+  const hit=a.r!=null&&a.r>=t.r&&aw>=tw-0.01;
+  if(hit){
+    if(rg&&a.r>=rg.hi)return {t:{w:a.w==null?null:rnd2(aw+inc),r:back?Math.ceil((rg.lo+rg.hi)/2):rg.lo},miss:0,why:'+'+inc+' kg',from:{w:a.w,r:a.r}};
+    return {t:{w:a.w,r:rg?Math.min(a.r+1,rg.hi):a.r+1},miss:0,why:'+1 rep'};
+  }
+  if(miss+1>=3){
+    const w=t.w==null?null:Math.max(inc,Math.floor(tw*0.9/inc)*inc);
+    return {t:{w:w==null?null:rnd2(w),r:rg?(back?Math.ceil((rg.lo+rg.hi)/2):rg.lo):t.r},miss:0,why:'−10 % (3 misses)'};
+  }
+  return {t:{w:t.w,r:t.r},miss:miss+1,why:'repeat \u2014 not hit last time'};
+}
 function targetSets(exDef){
   const L=lastMap[exDef.id];
-  const inPhase=!exDef.plan||!PHASE||(L&&L.prog===PHASE.id);
-  if(L&&L.sets.length&&inPhase){
-    const sets=L.sets.filter(x=>x.r!=null||x.w!=null);
-    if(sets.length){
-      const n=exDef.sets, out=[];
-      for(let j=0;j<n;j++){const src=sets[j],pl=exDef.plan&&exDef.plan[j];out.push(src?{w:src.w,r:src.r}:(pl?{w:pl[0],r:pl[1]}:null))}  // a set skipped last time falls back to its plan value
-      return {src:'last',sets:out, lastTop:sets.map(x=>(x.w==null?'bw':x.w)+'\u00D7'+x.r).join(', '), lastDate:L.date};
-    }
+  if(!exDef.plan||!PHASE){                                    // no phase plan: last values, as before
+    if(L&&L.sets.length){const out=[];for(let j=0;j<exDef.sets;j++){const x=L.sets[j];out.push(x?{w:x.w,r:x.r}:null)}
+      return {src:'last',sets:out,why:[],lastTop:L.sets.map(x=>(x.w==null?'bw':x.w)+'×'+x.r).join(', '),lastDate:L.date}}
+    return null;
   }
-  if(exDef.plan&&exDef.plan.length){
-    const out=[];for(let j=0;j<exDef.sets;j++){const p=exDef.plan[j];out.push(p?{w:p[0],r:p[1]}:null)}
-    return {src:'plan',sets:out,lastTop:exDef.plan.map(p=>p[0]+'\u00D7'+p[1]).join(', '),lastDate:null};
+  const hist=[];for(let x=L;x;x=x.prev){if(x.prog!==PHASE.id)break;hist.unshift(x)}
+  const rg=repRange(exDef.reps), inc=exDef.inc||2.5, n=exDef.sets;
+  const out=[], why=[], froms=[];
+  for(let j=0;j<n;j++){
+    const pl=exDef.plan[j]||exDef.plan[exDef.plan.length-1];
+    let t={w:pl[0],r:pl[1]}, miss=0, w='starting target', prevAct=null, from=null;
+    hist.forEach(h=>{
+      const a=h.sets[j];if(!a||a.r==null)return;
+      if(h.deload){prevAct=a;return}
+      const shown=a.tr!=null?{w:a.tw,r:a.tr}:(prevAct?{w:prevAct.w,r:prevAct.r}:t);   // what he was asked for that day
+      const st=progStep(shown,a,miss,rg,inc,j>0);t=st.t;miss=st.miss;w=st.why;from=st.from||null;prevAct=a;
+    });
+    if(DELOAD&&hist.length){const a=hist[hist.length-1].sets[j];if(a&&a.r!=null){t={w:a.w,r:a.r};w='deload: no increase'}}
+    out.push(t);why.push(w);froms.push(from);
   }
-  return null;
+  /* a back-off set only gains kg while it stays at least ~10 % under today's top set;
+     otherwise it holds at the top of its range and rises once the top set has risen */
+  for(let j=1;j<n;j++){
+    if(out[0].w==null||out[j].w==null||!froms[j])continue;
+    const cap=Math.floor(out[0].w*0.9/inc+1e-9)*inc;
+    if(out[j].w>cap){out[j]={w:froms[j].w,r:rg?rg.hi:froms[j].r};why[j]='hold \u2014 rises with the top set'}
+  }
+  const last=hist.length?hist[hist.length-1]:null;
+  return {src:last?'prog':'plan',sets:out,why,lastDate:last?last.date:null,
+    lastTop:last?last.sets.map(x=>(x.w==null?'bw':x.w)+'×'+x.r).join(', '):exDef.plan.map(p=>p[0]+'×'+p[1]).join(', ')};
 }
 /* Warm-up rows for today: actual kg from the working weight, rounded to the exercise
    increment (never finer than 2.5 kg); barbell lifts never below the 20 kg bar. */
@@ -1283,7 +1326,8 @@ function renderRun(){
         <button class="chk" ${dis} onclick="toggleSet(${i},${j})">${s.done?'\u2713':'\u25CB'}</button>
       </div>`;
     }).join('');
-    const ref=T?`<div class="muted" style="margin-top:8px;font-size:.88rem">${T.src==='plan'?'Target':'Last ('+fmtD(T.lastDate)+')'}: ${T.lastTop} \u2014 tap \u25CB to log it as shown, or type what you did</div>`:'';
+    const today=T&&T.why&&T.why.length?T.sets.map((x,j)=>x?`<span style="white-space:nowrap"><b>${TB?(j===0?'Top':'Back'):j+1} ${x.w==null?'bw':x.w}\u00D7${x.r}</b> <span class="tg">${T.why[j]}</span></span>`:'').join(' \u00B7 '):'';
+    const ref=T?`<div class="today" style="margin-top:8px;font-size:.9rem">${today?'Today: '+today+'<br>':''}<span class="muted">${T.src==='plan'?'Starting target':'Last ('+fmtD(T.lastDate)+'): '+T.lastTop} \u2014 tap \u25CB if you did it as shown, or type what you did</span></div>`:'';
     const hintHtml='';
     return `<div class="ex ${doneAll?'done':''}" id="ex-${i}">
       <div class="ex-h">
@@ -1343,6 +1387,7 @@ function toggleSet(i,j){
     if(wv==null||rv==null){toast('Nothing to log \u2014 type kg and reps');return}
     wi.value=wv;ri.value=Math.round(rv);
     if(sw&&sr)s.sug=true;else if(sw)s.sug='w';else if(sr)s.sug='r';else delete s.sug;
+    if(tv&&tv.r!=null){s.tw=tv.w;s.tr=tv.r}else{delete s.tw;delete s.tr}   // v11.14.1: the target this set was given
   }
   if(!s.done){wi.classList.remove('tgt');ri.classList.remove('tgt')}
   s.done=!s.done;
